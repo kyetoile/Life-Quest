@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Quest ✦</title>
+<meta name="description" content="Your personal RPG life tracker — quests, skills, and adventures await!">
+<meta name="theme-color" content="#6c5ce7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Life Quest">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<!-- Inline SVG icon as data URL for apple-touch-icon fallback -->
+<script>
+// Generate icons and register service worker
+(function(){
+  // Draw a cute icon on canvas and store as PNG
+  function makeIcon(size){
+    const c=document.createElement('canvas');
+    c.width=c.height=size;
+    const ctx=c.getContext('2d');
+    // Background gradient
+    const g=ctx.createRadialGradient(size*.5,size*.4,0,size*.5,size*.5,size*.6);
+    g.addColorStop(0,'#a29bfe');g.addColorStop(1,'#6c5ce7');
+    ctx.fillStyle=g;
+    // Rounded rect
+    const r=size*.22;
+    ctx.beginPath();
+    ctx.moveTo(r,0);ctx.lineTo(size-r,0);ctx.quadraticCurveTo(size,0,size,r);
+    ctx.lineTo(size,size-r);ctx.quadraticCurveTo(size,size,size-r,size);
+    ctx.lineTo(r,size);ctx.quadraticCurveTo(0,size,0,size-r);
+    ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
+    ctx.closePath();ctx.fill();
+    // Sparkle dots
+    [[.18,.18,'#fff',.7],[.82,.18,'#fd79a8',.8],[.18,.82,'#00cec9',.7],[.82,.82,'#f9a825',.8]].forEach(([x,y,c,a])=>{
+      ctx.globalAlpha=a;ctx.fillStyle=c;ctx.beginPath();
+      ctx.arc(x*size,y*size,size*.045,0,Math.PI*2);ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    // Star / sword icon in center
+    ctx.font=`${size*.45}px serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('⚔️',size*.5,size*.52);
+    // "LQ" text at bottom
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.font=`900 ${size*.13}px Nunito,sans-serif`;
+    ctx.fillText('LIFE QUEST',size*.5,size*.86);
+    return c.toDataURL('image/png');
+  }
+  window._iconMaker=makeIcon;
+})();
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;700&display=swap');
+:root{
+  --bg:#f0eeff;--bg2:#e8e2ff;--panel:#fff;--panel2:#f7f4ff;
+  --border:#d4ccff;--border2:#b8acff;
+  --text:#1a1440;--text2:#5a4fa0;--text3:#9890c8;
+  --accent:#6c5ce7;--accent2:#a29bfe;
+  --gold:#f9a825;--gold2:#ff8f00;
+  --teal:#00cec9;--pink:#fd79a8;--green:#00b894;
+  --sky:#74b9ff;--red:#e17055;--shadow:rgba(108,92,231,0.13);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(70px);opacity:0.28;}
+.b1{width:320px;height:320px;background:#a29bfe;top:-100px;right:-80px;}
+.b2{width:260px;height:260px;background:#fd79a8;bottom:60px;left:-90px;}
+.b3{width:200px;height:200px;background:#00cec9;bottom:240px;right:20px;}
+.app{max-width:700px;margin:0 auto;padding:.75rem .75rem 5rem;position:relative;z-index:1;}
+.hdr{text-align:center;padding:1rem 0 .8rem;margin-bottom:.8rem;}
+.hdr::after{content:'';display:block;margin:8px auto 0;width:70%;height:3px;background:linear-gradient(90deg,transparent,var(--accent),var(--pink),var(--accent),transparent);border-radius:2px;}
+.hdr-jp{font-family:'Noto Sans JP',sans-serif;font-size:10px;color:var(--text3);letter-spacing:4px;margin-bottom:3px;}
+.hdr-title{font-family:'Cinzel Decorative',serif;font-size:18px;font-weight:700;color:var(--accent);}
+.hdr-sub{font-size:10px;color:var(--text3);letter-spacing:2px;margin-top:3px;font-weight:700;}
+.role-row{display:flex;gap:7px;margin-bottom:1rem;overflow-x:auto;padding-bottom:2px;}
+.rbtn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 11px;background:var(--panel);border:2px solid var(--border);border-radius:14px;cursor:pointer;min-width:70px;transition:all .2s;font-family:'Nunito',sans-serif;box-shadow:0 2px 8px var(--shadow);}
+.rbtn:hover{border-color:var(--accent2);transform:translateY(-2px);}
+.rbtn.active{border-color:var(--accent);background:var(--bg2);box-shadow:0 4px 16px var(--shadow);transform:translateY(-2px);}
+.r-ico{font-size:24px;line-height:1;}.r-lbl{font-size:9px;font-weight:800;color:var(--text2);text-align:center;}
+.rbtn.active .r-lbl{color:var(--accent);}
+.cstrip{display:flex;align-items:center;gap:12px;margin-bottom:10px;background:var(--panel2);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;}
+.cs-spr{font-size:36px;}.cs-inf{flex:1;min-width:0;}
+.cs-nm{font-family:'Cinzel Decorative',serif;font-size:12px;font-weight:700;color:var(--text);}
+.cs-rl{font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px;}
+.cs-bw{display:flex;align-items:center;gap:8px;}
+.cs-lv{font-size:10px;font-weight:900;color:var(--accent);min-width:32px;}
+.btrack{flex:1;height:8px;background:var(--bg2);border-radius:20px;overflow:hidden;border:1px solid var(--border);}
+.bfill{height:100%;border-radius:20px;transition:width .6s cubic-bezier(.34,1.2,.64,1);}
+.cs-xp{font-size:9px;color:var(--text3);min-width:54px;text-align:right;font-weight:700;}
+.chips{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+.chip{font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;}
+.cp{background:#ede9ff;color:#5a4aff;}.cg{background:#fff8e1;color:#e65100;}
+.ct{background:#e0f7fa;color:#006064;}.ck{background:#fce4ec;color:#c2185b;}.ca{background:#f3e5f5;color:#6a1b9a;}
+.nav-tabs{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;}
+.ntab{flex-shrink:0;padding:7px 12px;font-size:11px;font-weight:800;cursor:pointer;border-radius:10px;border:2px solid var(--border);color:var(--text2);background:var(--panel);transition:all .15s;font-family:'Nunito',sans-serif;white-space:nowrap;}
+.ntab.active{color:white;background:var(--accent);border-color:var(--accent);box-shadow:0 4px 12px rgba(108,92,231,.3);}
+.card{background:var(--panel);border:2px solid var(--border);border-radius:16px;padding:1rem;box-shadow:0 4px 16px var(--shadow);margin-bottom:10px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ct,linear-gradient(90deg,var(--accent),var(--accent2)));}
+.ctitle{font-size:9px;font-weight:900;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.ctitle em{color:var(--accent);font-style:normal;}
+.tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;}
+.tab{flex:1;min-width:55px;padding:7px 4px;font-size:10px;font-weight:800;text-align:center;cursor:pointer;border-radius:10px;border:2px solid var(--border);color:var(--text2);background:var(--panel);transition:all .15s;font-family:'Nunito',sans-serif;}
+.tab.active{color:white;background:var(--accent);border-color:var(--accent);}
+.apanel{background:var(--panel2);border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;}
+.atitle{font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+.frow{display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap;}
+.fi{flex:1;min-width:100px;padding:8px 11px;font-size:12px;border:2px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-family:'Nunito',sans-serif;font-weight:700;}
+.fi:focus{outline:none;border-color:var(--accent);}
+.fta{width:100%;padding:8px 11px;font-size:12px;border:2px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-family:'Nunito',sans-serif;font-weight:600;resize:vertical;min-height:56px;margin-bottom:7px;}
+.fta:focus{outline:none;border-color:var(--accent);}
+.bmain{width:100%;padding:9px;background:linear-gradient(135deg,var(--accent),#8c7ae6);color:white;border:none;border-radius:9px;font-size:12px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:1px;transition:all .2s;box-shadow:0 4px 12px rgba(108,92,231,.3);}
+.bmain:hover{transform:translateY(-1px);}
+.bsm{padding:6px 12px;font-size:11px;font-weight:800;border-radius:8px;border:2px solid var(--border);color:var(--text2);background:var(--panel2);cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;}
+.bsm:hover{border-color:var(--accent2);color:var(--accent);}
+.dbtn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:5px;transition:color .15s;font-family:inherit;}
+.dbtn:hover{color:var(--red);}
+.tag{font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;display:inline-block;}
+.tg{background:#e8f5e9;color:#2e7d32;}.tb{background:#e3f2fd;color:#1565c0;}
+.ty{background:#fff8e1;color:#e65100;}.tp{background:#fce4ec;color:#c2185b;}
+.tpu{background:#ede9ff;color:#5a4aff;}.tt{background:#e0f7fa;color:#006064;}.tgr{background:#f5f5f5;color:#424242;}
+.qlist{display:flex;flex-direction:column;gap:7px;}
+.qcard{background:var(--panel);border:2px solid var(--border);border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px var(--shadow);}
+.qcard:hover{border-color:var(--accent2);transform:translateY(-1px);}
+.qcard.done{opacity:.5;}.qcard.done .qnm{text-decoration:line-through;}
+.qchk{width:24px;height:24px;border-radius:50%;border:2.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:transparent;transition:all .2s;}
+.qcard.done .qchk{background:var(--accent);border-color:var(--accent);color:white;}
+.qbody{flex:1;min-width:0;}
+.qnm{font-size:13px;font-weight:800;color:var(--text);line-height:1.3;}
+.qmeta{display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap;}
+.qbdg{font-size:9px;font-weight:900;padding:1px 8px;border-radius:20px;text-transform:uppercase;}
+.bd{background:#e8f5e9;color:#2e7d32;}.bh{background:#fce4ec;color:#c2185b;}
+.bw{background:#e3f2fd;color:#1565c0;}.bq{background:#fff8e1;color:#e65100;}
+.qsk{font-size:10px;color:var(--text3);font-weight:700;}
+.qr{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.qxp{font-size:11px;font-weight:900;color:var(--accent);}
+.sbdg{font-size:9px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--pink));color:white;padding:1px 7px;border-radius:20px;margin-left:4px;}
+.litem{background:var(--panel);border:1.5px solid var(--border);border-radius:10px;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.ll{display:flex;align-items:center;gap:8px;}
+.lname{font-size:12px;font-weight:800;color:var(--text);}
+.ltype{font-size:9px;color:var(--text3);margin-top:1px;}
+.lxp{font-size:12px;font-weight:900;color:var(--accent);}
+.ltime{font-size:9px;color:var(--text3);margin-top:1px;}
+.skrows{display:flex;flex-direction:column;gap:9px;}
+.skrow{display:flex;align-items:center;gap:10px;}
+.skico{width:32px;height:32px;flex-shrink:0;background:var(--bg2);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.skinf{flex:1;min-width:0;}
+.sktop{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.sknm{font-size:12px;font-weight:800;color:var(--text);}
+.sklb{font-size:9px;font-weight:900;padding:1px 7px;border-radius:20px;background:var(--bg2);color:var(--accent);border:1px solid var(--border2);}
+.skbt{height:7px;background:var(--bg2);border-radius:20px;overflow:hidden;border:1px solid var(--border);}
+.skbf{height:100%;border-radius:20px;transition:width .5s;}
+.skxt{font-size:9px;color:var(--text3);min-width:52px;text-align:right;flex-shrink:0;font-weight:600;}
+.ptog{display:flex;gap:6px;justify-content:center;margin-bottom:8px;}
+.ptbtn{font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;border:2px solid var(--border);background:var(--panel2);color:var(--text2);cursor:pointer;font-family:'Nunito',sans-serif;}
+.ptbtn.active{background:var(--accent);color:white;border-color:var(--accent);}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px;}
+.acard{background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:10px;text-align:center;position:relative;transition:all .2s;}
+.acard.unlocked{border-color:var(--gold);background:linear-gradient(135deg,#fff8e1,#fff3e0);box-shadow:0 4px 12px rgba(249,168,37,.2);}
+.acard.locked{opacity:.4;filter:grayscale(.4);}
+.acard.nextup{border-color:var(--accent2);background:linear-gradient(135deg,#f0eeff,#e8e2ff);animation:npulse 2s ease-in-out infinite;}
+@keyframes npulse{0%,100%{box-shadow:0 0 0 0 rgba(108,92,231,0);}50%{box-shadow:0 0 0 4px rgba(108,92,231,.2);}}
+.aico{font-size:26px;margin-bottom:4px;display:block;}
+.anm{font-size:10px;font-weight:800;color:var(--text);}
+.adsc{font-size:9px;color:var(--text3);line-height:1.4;margin-top:2px;}
+.acard.unlocked .adsc{color:var(--gold2);}
+.alck{position:absolute;top:5px;right:7px;font-size:10px;color:var(--text3);}
+.afrow{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;}
+.afbtn{font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;border:2px solid var(--border);background:var(--panel2);color:var(--text2);cursor:pointer;font-family:'Nunito',sans-serif;}
+.afbtn.active{background:var(--gold);color:white;border-color:var(--gold);}
+.orbbowl{position:relative;width:150px;height:90px;margin:0 auto;background:var(--bg2);border:2px solid var(--border2);border-radius:0 0 75px 75px;overflow:hidden;}
+.orbfill{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(0,206,201,.4),rgba(0,206,201,.85));transition:height .8s cubic-bezier(.34,1.2,.64,1);}
+.orbcnt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:2;}
+.orbnum{font-family:'Cinzel Decorative',serif;font-size:20px;font-weight:700;color:var(--accent);}
+.orblbl{font-size:9px;color:var(--text2);font-weight:800;}
+.orbtns{display:flex;gap:6px;margin-top:8px;justify-content:center;flex-wrap:wrap;}
+.obtn{padding:5px 14px;font-size:11px;font-weight:900;border-radius:20px;border:2px solid;cursor:pointer;font-family:'Nunito',sans-serif;}
+.oadd{background:var(--teal);color:white;border-color:var(--teal);}
+.oreset{background:transparent;color:var(--text3);border-color:var(--border);}
+.lorebox{background:linear-gradient(135deg,#1a0a2e,#2d1b69);border:2px solid #5a4aff;border-radius:12px;padding:14px;margin-bottom:10px;}
+.loretitle{font-family:'Cinzel Decorative',serif;font-size:13px;color:#a29bfe;margin-bottom:6px;}
+.loretext{color:rgba(255,255,255,.75);font-size:11px;line-height:1.8;}
+.scls{background:var(--panel);border:2px solid var(--border);border-radius:14px;padding:13px;margin-bottom:10px;}
+.scls.hsk{border-color:rgba(249,168,37,.4);}.scls.biz{border-color:rgba(0,206,201,.4);}
+.scls.fam{border-color:rgba(253,121,168,.4);}.scls.wrk{border-color:rgba(108,92,231,.4);}
+.snm{font-size:14px;font-weight:900;color:var(--text);}
+.ssub{font-size:10px;color:var(--text3);font-weight:600;margin-top:1px;}
+.wsched{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;}
+.wday{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:7px;text-align:center;}
+.wdl{font-size:9px;font-weight:900;color:var(--accent);letter-spacing:1px;margin-bottom:3px;}
+.wdc{font-size:10px;color:var(--text2);line-height:1.5;font-weight:600;}
+.ssec{margin-top:10px;padding-top:8px;border-top:1px solid var(--border);}
+.ssect{font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+.ibox{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:5px;}
+.ibox.gap{border-left:3px solid var(--red);}.ibox.str{border-left:3px solid var(--green);}.ibox.meth{border-left:3px solid var(--accent);}
+.rembox{background:linear-gradient(135deg,#fff8e1,#fff3e0);border:1.5px solid rgba(249,168,37,.3);border-radius:8px;padding:9px 12px;font-size:11px;color:#795548;line-height:1.7;}
+.remtitle{font-size:9px;font-weight:900;color:var(--gold2);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.lesitm{background:var(--panel2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:7px;}
+.leshdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.lestit{font-size:13px;font-weight:800;color:var(--text);}
+.leslbl{font-size:9px;font-weight:900;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin:4px 0 2px;}
+.lesgap{background:#fff3e0;border-left:3px solid var(--red);padding:5px 9px;border-radius:0 6px 6px 0;font-size:11px;color:#795548;margin-top:4px;}
+.lesmeth{background:#e8f5e9;border-left:3px solid var(--green);padding:5px 9px;border-radius:0 6px 6px 0;font-size:11px;color:#2e7d32;margin-top:4px;}
+.rsumm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.rstat{background:var(--panel2);border:1.5px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.rsnum{font-size:20px;font-weight:900;color:var(--accent);}
+.rslbl{font-size:9px;color:var(--text3);font-weight:700;margin-top:2px;}
+.irow{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--panel);border:1.5px solid var(--border);border-radius:10px;margin-bottom:6px;}
+.irow.keep{border-left:3px solid var(--green);}.irow.sell{border-left:3px solid var(--gold);}
+.irow.donate{border-left:3px solid var(--pink);}.irow.toss{border-left:3px solid var(--text3);}
+.irow.idone{opacity:.4;}
+.ichk{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;cursor:pointer;transition:all .2s;}
+.irow.idone .ichk{background:var(--green);border-color:var(--green);color:white;}
+.inm{flex:1;font-size:12px;font-weight:800;color:var(--text);}
+.icat{font-size:9px;color:var(--text3);}
+.sbdg2{font-size:9px;font-weight:900;padding:2px 8px;border-radius:20px;}
+.sk2{background:#e8f5e9;color:#2e7d32;}.ss2{background:#fff8e1;color:#e65100;}
+.sd2{background:#fce4ec;color:#c2185b;}.st2{background:#f5f5f5;color:#424242;}
+.jcard{background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;}
+.jco{font-size:13px;font-weight:900;color:var(--text);}
+.jrl{font-size:11px;color:var(--text2);font-weight:700;margin-top:1px;}
+.jst{font-size:10px;font-weight:900;padding:3px 10px;border-radius:20px;}
+.jw{background:#f3e5f5;color:#6a1b9a;}.ja{background:#e3f2fd;color:#1565c0;}
+.ji{background:#fff8e1;color:#e65100;}.jo{background:#e8f5e9;color:#2e7d32;}.jr{background:#ffebee;color:#c62828;}
+.cvtip{background:linear-gradient(135deg,#e8f5e9,#e0f7fa);border:1.5px solid rgba(0,184,148,.3);border-radius:10px;padding:12px;margin-bottom:8px;}
+.cvtitle{font-size:10px;font-weight:900;color:var(--green);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.cvitem{font-size:11px;color:#1b5e20;line-height:1.8;display:flex;gap:6px;margin-bottom:3px;}
+.cvitem::before{content:'▸';color:var(--green);flex-shrink:0;}
+.empty{text-align:center;padding:1.5rem 1rem;color:var(--text3);font-size:13px;font-weight:600;}
+.ei{font-size:32px;margin-bottom:8px;display:block;}
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--accent);color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:800;font-family:'Nunito',sans-serif;transition:transform .35s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;pointer-events:none;box-shadow:0 6px 20px rgba(108,92,231,.4);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.moverlay{position:fixed;inset:0;background:rgba(26,20,64,.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;}
+.moverlay.show{opacity:1;pointer-events:all;}
+.mbox{background:var(--panel);border:3px solid var(--gold);border-radius:20px;padding:1.8rem;text-align:center;max-width:310px;width:90%;box-shadow:0 20px 60px rgba(108,92,231,.3);animation:mPop .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes mPop{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+.mspr{font-size:52px;display:block;animation:mflt 2s ease-in-out infinite;margin-bottom:8px;}
+@keyframes mflt{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+.mtitle{font-family:'Cinzel Decorative',serif;font-size:14px;color:var(--gold2);margin-bottom:5px;}
+.msub{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px;}
+.mrwd{background:var(--bg2);border:1.5px solid var(--border2);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--accent);font-weight:800;margin-bottom:10px;}
+.maff{font-size:11px;color:var(--text2);font-style:italic;line-height:1.7;margin-bottom:14px;}
+.mclose{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--text);border:none;border-radius:10px;padding:10px 26px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="app">
+<div class="hdr">
+  <div class="hdr-jp">ライフクエスト · LIFE QUEST</div>
+  <div class="hdr-title">Life Quest ✦</div>
+  <div class="hdr-sub">YOUR STORY · YOUR POWER · YOUR ADVENTURE</div>
+</div>
+<div class="role-row" id="role-row"></div>
+<div class="cstrip">
+  <div class="cs-spr" id="cs-spr">🌸</div>
+  <div class="cs-inf">
+    <div class="cs-nm" id="cs-nm">Adventurer</div>
+    <div class="cs-rl" id="cs-rl">The All-Rounder</div>
+    <div class="cs-bw">
+      <span class="cs-lv" id="cs-lv">Lv.1</span>
+      <div class="btrack"><div class="bfill" id="cs-bar" style="width:0%"></div></div>
+      <span class="cs-xp" id="cs-xp">0/100 XP</span>
+    </div>
+    <div class="chips" id="cs-chips"></div>
+  </div>
+</div>
+<div class="nav-tabs" id="nav-tabs"></div>
+<div id="main"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="moverlay" id="modal">
+  <div class="mbox">
+    <span class="mspr" id="m-spr">🌸</span>
+    <div class="mtitle" id="m-ttl">✦ LEVEL UP ✦</div>
+    <div class="msub" id="m-sub"></div>
+    <div class="mrwd" id="m-rwd"></div>
+    <div class="maff" id="m-aff"></div>
+    <button class="mclose" onclick="closeModal()">✨ Let's Go!</button>
+  </div>
+</div>
+<script>
+// ═══════ CONSTANTS ═══════
+const ROLES=[
+  {id:'home',   ico:'🏠',lbl:'Home',   spr:'🌸',nm:'Adventurer',rl:'The All-Rounder',     clr:'#6c5ce7',bar:'linear-gradient(90deg,#6c5ce7,#a29bfe)'},
+  {id:'rui',    ico:'🐉',lbl:'Rui',    spr:'🐉',nm:'Rui',       rl:'Dragon · Observer',   clr:'#00cec9',bar:'linear-gradient(90deg,#00b894,#00cec9)'},
+  {id:'teacher',ico:'📖',lbl:'Sensei', spr:'📖',nm:'Sensei',    rl:'Mandarin Teacher',    clr:'#f9a825',bar:'linear-gradient(90deg,#ff8f00,#f9a825)'},
+  {id:'mystic', ico:'🔮',lbl:'Mystic', spr:'🔮',nm:'Mystic',    rl:'Tarot · Bazi Reader', clr:'#fd79a8',bar:'linear-gradient(90deg,#e84393,#fd79a8)'},
+  {id:'seeker', ico:'💼',lbl:'Seeker', spr:'💼',nm:'Seeker',    rl:'Jakarta Job Seeker',  clr:'#74b9ff',bar:'linear-gradient(90deg,#0984e3,#74b9ff)'},
+];
+const ALL_SKILLS=[
+  {id:'guitar',   nm:'Guitar',    ico:'🎸',bar:'#00b894'},
+  {id:'singing',  nm:'Singing',   ico:'🎤',bar:'#fdcb6e'},
+  {id:'voice',    nm:'Voice Act.',ico:'🎙️',bar:'#e17055'},
+  {id:'mandarin', nm:'Mandarin',  ico:'🀄',bar:'#a29bfe'},
+  {id:'tarot',    nm:'Tarot/Bazi',ico:'🔮',bar:'#fd79a8'},
+  {id:'vtuber',   nm:'VTubing',   ico:'🎭',bar:'#74b9ff'},
+  {id:'fitness',  nm:'Fitness',   ico:'💪',bar:'#f9a825'},
+  {id:'focus',    nm:'Focus',     ico:'📚',bar:'#55efc4'},
+  {id:'baking',   nm:'Baking',    ico:'🧁',bar:'#fab1d3'},
+  {id:'math',     nm:'Math',      ico:'➗',bar:'#81ecec'},
+  {id:'english',  nm:'English',   ico:'🔤',bar:'#b2f0a0'},
+  {id:'bizchina', nm:'Biz 中文',  ico:'💼',bar:'#d6adfb'},
+];
+const SENSEI_SKILLS=[
+  {id:'s_man',nm:'Mandarin',      ico:'🀄',bar:'#a29bfe'},
+  {id:'s_biz',nm:'Biz Mandarin',  ico:'💼',bar:'#74b9ff'},
+  {id:'s_ppt',nm:'PPT Making',    ico:'📊',bar:'#fdcb6e'},
+  {id:'s_mat',nm:'Material Design',ico:'📄',bar:'#fd79a8'},
+  {id:'s_pln',nm:'Planning',      ico:'📅',bar:'#00cec9'},
+  {id:'s_mkt',nm:'Marketing',     ico:'📣',bar:'#e17055'},
+  {id:'s_cnt',nm:'Content Create',ico:'🎨',bar:'#00b894'},
+  {id:'s_imm',nm:'Immersion Teach',ico:'🗣️',bar:'#6c5ce7'},
+];
+const ROLE_SKILLS={
+  home:   ALL_SKILLS.map(s=>s.id),
+  rui:    ['vtuber','singing','voice','guitar','focus'],
+  teacher:SENSEI_SKILLS.map(s=>s.id),
+  mystic: ['tarot','focus','english','mandarin'],
+  seeker: ['focus','english','mandarin','bizchina','math'],
+};
+const XPL=100;
+const TITLES=['Wanderer','Novice','Apprentice','Journeyman','Adept','Skilled','Expert','Master','Grandmaster','Legend'];
+const AFFS=["You carry multiple worlds inside you — effortlessly. ✨","Every step proves you never give up. 🐉","Teacher, artist, reader, dreamer all in one. Own that.","Rest is part of the journey. You earned this. 🌸","6 months ago you'd be amazed at who you are now.","The dragon doesn't ask permission to fly. Neither do you. 🌙","You're building something beautiful, one quest at a time.","Growth isn't linear — it's a spiral upward. Trust it.","Today's practice is tomorrow's mastery.","Rui is watching over you. Go be legendary. 🐲"];
+const LVR=[{lv:2,t:'Companion: Baby Slime 🟢'},{lv:3,t:'Rui awakened! 🐉'},{lv:5,t:'Treat: your fav meal 🍜'},{lv:7,t:'Companion: Moon Cat 🐱'},{lv:10,t:'Treat: new book 📖'},{lv:15,t:'Companion: Shadow Fox 🦊'},{lv:20,t:'Treat: café day ☕'},{lv:25,t:'Rui True Form 🐲'},{lv:30,t:'Treat: something you wanted 🎁'},{lv:50,t:'You are legendary. 💖'}];
+
+const CLASS_PROFILES=[
+  {id:'hsk',nm:'HSK 1 Private',emoji:'🎓',css:'hsk',tag:'ty',type:'Private · 1 student · 3-month goal',
+   desc:'Ambitious student targeting HSK 1 in 3 months. 1 chapter/week. HSK 1 v3.0 (harder new version). Good rhythm found!',
+   sched:[{d:'MON',c:'Speaking\nPreview material\nPractice before theory'},{d:'WED',c:'Textbook reading\nCharacter recognition\nGrammar & theory'},{d:'FRI',c:'Writing practice\nMemorize characters\nAll exercises outside class'}],
+   method:'Practice → Theory → Writing. Light immersion. Structured schedule.',
+   strength:'Self-motivated, consistent, responds to clear goals.',
+   gap:'New characters can overwhelm — reinforce stroke order outside class.',
+   ideas:[],
+   reminders:['Keep practice-before-theory momentum!','HSK 1 v3.0 has harder vocab — pace carefully','Check if they do outside exercises independently','Start class in Mandarin — let them absorb before explaining']},
+  {id:'biz',nm:'Business Mandarin',emoji:'💼',css:'biz',tag:'tt',type:'Private · 1 student · Full Mandarin daily',
+   desc:'Daily class, book-based. Full Mandarin only. Friday presentation. Your favorite class — you\'re also learning and being challenged!',
+   sched:[{d:'MON–THU',c:'Book chapter\nFull Mandarin only\nVocab in context'},{d:'FRI',c:'Student presentation\nFull Mandarin\nFeedback in Mandarin'},{d:'DAILY',c:'Immersion mode\nYou learn too!\nChallenge each other'}],
+   method:'Full immersion. Book-driven. Presentation Fridays. Zero translation.',
+   strength:'High comprehension, committed adult learner.',
+   gap:'Monitor if Friday presentations need more scaffolding structure.',
+   ideas:[],
+   reminders:['NEVER switch to English — hold the line!','Give structured feedback in Mandarin on Fridays','Note new business vocab you learn from this class','If they mention renewing — remind them of their progress!']},
+  {id:'family',nm:'Family Class',emoji:'👨‍👩‍👧',css:'fam',tag:'tp',type:'Small Group · 3 people · Free class',
+   desc:'3 members: going to SMP / at SMP / post-SMA. Different pace across generations. Tried full Mandarin last class — it worked! Keep going.',
+   sched:[{d:'SPEAKING',c:'Full Mandarin\nForce output\nNo translating'},{d:'REPEAT',c:'Heavy repetition\nMore cycles needed\nPatience is key'},{d:'ENGAGE',c:'Games & songs\nMake it fun\nLower anxiety'}],
+   method:'Full immersion + gestures. Speaking focus. Heavy repetition for younger students.',
+   strength:'Family dynamic = safe environment. No exam pressure.',
+   gap:'Age gap causes pace mismatch. Post-SMA may want writing track. Younger need more repetition.',
+   ideas:['🎮 Vocab games: matching cards, Mandarin pictionary','🎵 Learn a simple Mandarin song together each week','🗣 Forced speaking: answer in Mandarin even if broken','📱 WhatsApp homework: 1 Mandarin word per day','🎭 Role-play: buying food, greeting someone — contextual speaking','📺 Watch 2-min Mandarin clip, discuss what they understood'],
+   reminders:['⚠ Don\'t let faster students dominate — check in with each','Post-SMA: ask if they want a writing track','Full Mandarin worked last time — don\'t give up on it!','TPR (Total Physical Response) works well for younger ones','Keyword + gesture = better memory for new vocab','Give each person a mini personal goal within the group']},
+  {id:'worker',nm:'Worker Group',emoji:'👔',css:'wrk',tag:'tpu',type:'Small Group · Working adults · Conversational',
+   desc:'Book: 汉语会话360句. Focus: speaking and typing. Sometimes stuck on exercises. Immersion works for adults — push output more.',
+   sched:[{d:'SPEAKING',c:'Book dialogue\nRole-play pairs\nMandarin output'},{d:'TYPING',c:'Phone pinyin typing\nReal usage context\nBuild muscle memory'},{d:'REVIEW',c:'Previous chapter\nError correction\nNew vocab quiz'}],
+   method:'Conversation-first. 汉语会话360句. Typing integration. Immersion with scaffolded output.',
+   strength:'Adult motivation — real reasons to learn. Quick vocabulary retention.',
+   gap:'Exercise variety — try substitution drills, typing, and role-play rotations.',
+   ideas:['📝 Substitution drill: "我去___" — 5 different places','📱 Save 5 Mandarin words in phone contacts as homework','🎭 Role-play: boss giving instructions in Mandarin','💬 Group chat: send 1 Mandarin sentence per day','🔄 Chain speaking: each person adds one sentence to a story','📖 Dictation: say sentence → they write pinyin → then characters'],
+   reminders:['Adults can handle immersion — keep pushing!','Substitution drill: "我去___" change 1 word, repeat 5x','Typing: have them type name, job, city in Mandarin on their phone','Use the book scenarios as built-in role-plays','Record their speaking — let them hear themselves','Sentence substitution drills when stuck on exercises']},
+];
+
+const SURPRISE_QUESTS=[
+  {nm:'Cover a song (any genre)!',sk:'vtuber',xp:50},{nm:'Record 5-min vlog as Rui',sk:'vtuber',xp:30},
+  {nm:'Design a new emote sketch',sk:'vtuber',xp:20},{nm:'Write Rui\'s lore entry',sk:'vtuber',xp:20},
+  {nm:'Solfège practice 20 min (do re mi)',sk:'singing',xp:20},{nm:'Guitar improv for 30 min',sk:'guitar',xp:30},
+  {nm:'Plan next month\'s content calendar',sk:'vtuber',xp:30},{nm:'Write a short original song chorus',sk:'singing',xp:30},
+  {nm:'Research L2D artists & pricing',sk:'focus',xp:20},{nm:'Draft tweet introducing Rui',sk:'vtuber',xp:10},
+];
+
+const LESSON_IDEAS=[
+  {tag:'Tones',    t:'Minimal Pair Drills',          b:'mā/má/mǎ/mà practice. Record → playback → compare. Tone sandhi bù & yī.',o:['Distinguish all 4 tones','Self-correct on playback','Handle tone sandhi']},
+  {tag:'Grammar',  t:'Measure Words 量词',            b:'Gè, zhāng, běn, tiáo. Measure word bingo with picture cards.',o:['Name top 6 measure words','Form correct phrases','Use naturally']},
+  {tag:'Speaking', t:'Daily Routine Dialogue',        b:'Morning routine script. Fill blanks → role-play. Expand with měitiān.',o:['State 5 daily actions','Use time expressions','3 full sentences from memory']},
+  {tag:'Immersion',t:'Mandarin-Only Challenge Day',   b:'Zero English. Students respond any way they can. Build confidence.',o:['Survive 45 min Mandarin only','Pick up 5 words from context','Feel less afraid']},
+  {tag:'HSK',      t:'HSK Time Expressions',          b:'以前 以后 的时候. Sentence rewriting. Gap-fill listening.',o:['Use 以前/以后 in 5 sentences','Pass quiz 80%+','Understand timed HSK audio']},
+  {tag:'Speaking', t:'Substitution Drills',           b:'"我去___" — sub 5 words. Repeat, speed up, natural rhythm.',o:['Complete 3 patterns','Speed up response','Use in free speech']},
+  {tag:'Biz',      t:'Business Self-Intro 自我介绍',  b:'Full Mandarin self-intro: company, role, goals. Present to class.',o:['1-min Mandarin intro','Polite business register','Answer 2 follow-up Qs']},
+  {tag:'Typing',   t:'Pinyin Typing Practice',        b:'Type name, city, job, fav food on phone. Then type today\'s sentences.',o:['Type 5 personal sentences','Use pinyin input','Build muscle memory']},
+  {tag:'Culture',  t:'Chinese New Year Vocab',        b:'Festival vocab & traditions. Craft: write 福. Listen: 恭喜发财.',o:['Say 5 greetings','Explain 3 traditions','Write 新年快乐']},
+  {tag:'Writing',  t:'Stroke Order: Basic Radicals',  b:'人口日月山. Correct stroke order. Write in grid. Recognize in new chars.',o:['Write 5 radicals','Recognize in new chars','Left-before-right rule']},
+];
+
+// ═══════ ACHIEVEMENTS ═══════
+const ACHS=[
+  {id:'s3', cat:'streak',ico:'🔥',nm:'On Fire',       dsc:'3-day streak',          req:s=>s.streak>=3},
+  {id:'s7', cat:'streak',ico:'🌟',nm:'Week Warrior',  dsc:'7-day streak',          req:s=>s.streak>=7},
+  {id:'s14',cat:'streak',ico:'💫',nm:'Two Weeks',     dsc:'14-day streak',         req:s=>s.streak>=14},
+  {id:'s30',cat:'streak',ico:'🌙',nm:'Moon Month',    dsc:'30-day streak',         req:s=>s.streak>=30},
+  {id:'s60',cat:'streak',ico:'⭐',nm:'Star Seeker',   dsc:'60-day streak',         req:s=>s.streak>=60},
+  {id:'s100',cat:'streak',ico:'👑',nm:'Century',      dsc:'100-day streak!!',      req:s=>s.streak>=100},
+  {id:'x1', cat:'xp',   ico:'✨',nm:'First Light',   dsc:'100 total XP',          req:s=>s.totalXp>=100},
+  {id:'x2', cat:'xp',   ico:'💎',nm:'Crystal Mage',  dsc:'500 total XP',          req:s=>s.totalXp>=500},
+  {id:'x3', cat:'xp',   ico:'🏆',nm:'Thousand',      dsc:'1,000 total XP',        req:s=>s.totalXp>=1000},
+  {id:'x4', cat:'xp',   ico:'🌌',nm:'Cosmic Power',  dsc:'5,000 total XP',        req:s=>s.totalXp>=5000},
+  {id:'q1', cat:'quests',ico:'📜',nm:'First Quest',  dsc:'Complete 1 quest',      req:s=>s.log.length>=1},
+  {id:'q10',cat:'quests',ico:'⚔️',nm:'Adventurer',   dsc:'Complete 10 quests',    req:s=>s.log.length>=10},
+  {id:'q50',cat:'quests',ico:'🗡️',nm:'Veteran',      dsc:'Complete 50 quests',    req:s=>s.log.length>=50},
+  {id:'q100',cat:'quests',ico:'🛡️',nm:'Hero',        dsc:'Complete 100 quests',   req:s=>s.log.length>=100},
+  {id:'sk1',cat:'skills',ico:'🌱',nm:'Growing',      dsc:'Any skill Lv.5',        req:s=>Object.values({...s.skills,...s.sskills}).some(x=>lvX(x)>=5)},
+  {id:'sk2',cat:'skills',ico:'🌿',nm:'Blooming',     dsc:'Any skill Lv.10',       req:s=>Object.values({...s.skills,...s.sskills}).some(x=>lvX(x)>=10)},
+  {id:'sk3',cat:'skills',ico:'🌈',nm:'Polymath',     dsc:'All 12 main skills',    req:s=>ALL_SKILLS.every(sk=>s.skills[sk.id]?.xp>0)},
+  {id:'t1', cat:'teacher',ico:'📚',nm:'First Lesson', dsc:'Log first lesson',      req:s=>(s.lessons||[]).length>=1},
+  {id:'t2', cat:'teacher',ico:'📝',nm:'Lesson Maker', dsc:'Log 5 lessons',         req:s=>(s.lessons||[]).length>=5},
+  {id:'t3', cat:'teacher',ico:'📋',nm:'Planner Pro',  dsc:'Log 20 lessons',        req:s=>(s.lessons||[]).length>=20},
+  {id:'t4', cat:'teacher',ico:'📅',nm:'Curriculum',   dsc:'Log 50 lessons',        req:s=>(s.lessons||[]).length>=50},
+  {id:'t5', cat:'teacher',ico:'🏫',nm:'All Classes',  dsc:'Log all 4 class types', req:s=>['hsk','biz','family','worker'].every(id=>(s.lessons||[]).some(l=>l.cid===id))},
+  {id:'t6', cat:'teacher',ico:'🌊',nm:'Immersion!',   dsc:'First immersion class',  req:s=>(s.immC||0)>=1},
+  {id:'t7', cat:'teacher',ico:'🐉',nm:'Dragon Teach', dsc:'30 immersion classes',   req:s=>(s.immC||0)>=30},
+  {id:'t8', cat:'teacher',ico:'🀄',nm:'HSK Coach',    dsc:'20 HSK lessons',         req:s=>(s.lessons||[]).filter(l=>l.cid==='hsk').length>=20},
+  {id:'t9', cat:'teacher',ico:'💼',nm:'Corp Sensei',  dsc:'20 biz lessons',         req:s=>(s.lessons||[]).filter(l=>l.cid==='biz').length>=20},
+  {id:'t10',cat:'teacher',ico:'🌸',nm:'Family Guide', dsc:'15 family lessons',       req:s=>(s.lessons||[]).filter(l=>l.cid==='family').length>=15},
+  {id:'t11',cat:'teacher',ico:'🗣️',nm:'360 Master',   dsc:'20 worker lessons',       req:s=>(s.lessons||[]).filter(l=>l.cid==='worker').length>=20},
+  {id:'t12',cat:'teacher',ico:'📊',nm:'Slide Queen',  dsc:'First teaching PPT',      req:s=>(s.pptMade||0)>=1},
+  {id:'t13',cat:'teacher',ico:'📣',nm:'Marketed!',    dsc:'First tutoring promo',    req:s=>(s.promoPosted||0)>=1},
+  {id:'t14',cat:'teacher',ico:'⭐',nm:'1 Month',      dsc:'30+ logged teach days',   req:s=>(s.teachDays||0)>=30},
+  {id:'t15',cat:'teacher',ico:'💎',nm:'Half Year',    dsc:'180+ teach days',         req:s=>(s.teachDays||0)>=180},
+  {id:'r1', cat:'rui',  ico:'🐉',nm:'Dragon Born',   dsc:'First stream logged',     req:s=>(s.streams||[]).length>=1},
+  {id:'r2', cat:'rui',  ico:'🎭',nm:'VTuber Debut',  dsc:'10 streams logged',       req:s=>(s.streams||[]).length>=10},
+  {id:'r3', cat:'rui',  ico:'💜',nm:'100 Orbs',      dsc:'Fill orb bowl once',      req:s=>(s.orbFills||0)>=1},
+  {id:'r4', cat:'rui',  ico:'💰',nm:'L2D Dream',     dsc:'Save Rp 1,000,000',       req:s=>(s.savings||0)>=1000000},
+  {id:'r5', cat:'rui',  ico:'🎤',nm:'Cover Song',    dsc:'Surprise quest done',     req:s=>(s.log||[]).some(l=>l.sur)},
+  {id:'m1', cat:'music',ico:'🎸',nm:'Strummer',      dsc:'50 Guitar XP',            req:s=>(s.skills.guitar?.xp||0)>=50},
+  {id:'m2', cat:'music',ico:'🎵',nm:'Chord Keeper',  dsc:'200 Guitar XP',           req:s=>(s.skills.guitar?.xp||0)>=200},
+  {id:'m3', cat:'music',ico:'🎤',nm:'Vocalist',      dsc:'100 Singing XP',          req:s=>(s.skills.singing?.xp||0)>=100},
+  {id:'l1', cat:'life', ico:'🧁',nm:'Baker',         dsc:'50 Baking XP',            req:s=>(s.skills.baking?.xp||0)>=50},
+  {id:'l2', cat:'life', ico:'💪',nm:'Fit & Strong',  dsc:'100 Fitness XP',          req:s=>(s.skills.fitness?.xp||0)>=100},
+  {id:'l3', cat:'life', ico:'🌅',nm:'Early Bird',    dsc:'10 daily quests done',    req:s=>(s.log||[]).filter(l=>l.type==='daily').length>=10},
+  {id:'l4', cat:'life', ico:'🏠',nm:'New Chapter',   dsc:'Relocate list 50% done',  req:s=>{const it=s.items||[];return it.length>0&&it.filter(i=>i.done).length/it.length>=.5;}},
+  {id:'j1', cat:'seeker',ico:'💼',nm:'Job Hunter',   dsc:'First application added', req:s=>(s.jobs||[]).length>=1},
+  {id:'j2', cat:'seeker',ico:'📄',nm:'Applied x5',   dsc:'5 applications added',    req:s=>(s.jobs||[]).filter(j=>j.status==='applied'||j.status==='interview'||j.status==='offer').length>=5},
+  {id:'j3', cat:'seeker',ico:'🤝',nm:'Interviewing', dsc:'First interview reached', req:s=>(s.jobs||[]).some(j=>j.status==='interview')},
+  {id:'j4', cat:'seeker',ico:'🎉',nm:'Offer!',       dsc:'Get a job offer',         req:s=>(s.jobs||[]).some(j=>j.status==='offer')},
+  {id:'sp1',cat:'special',ico:'🌸',nm:'Blooming Soul',dsc:'Reach overall Lv.10',    req:s=>lvFx(s.totalXp)>=10},
+  {id:'sp2',cat:'special',ico:'🌌',nm:'Starborn',     dsc:'Reach overall Lv.25',    req:s=>lvFx(s.totalXp)>=25},
+  {id:'sp3',cat:'special',ico:'🎊',nm:'Multitalent',  dsc:'5 different skills trained',req:s=>Object.values(s.skills).filter(x=>x.xp>0).length>=5},
+  {id:'sp4',cat:'special',ico:'✨',nm:'Transcendent', dsc:'Reach overall Lv.50',    req:s=>lvFx(s.totalXp)>=50},
+];
+const ACH_CATS=['all','streak','xp','quests','skills','teacher','rui','music','life','seeker','special'];
+
+// ═══════ HELPERS ═══════
+function lvFx(x){return Math.floor((x||0)/XPL)+1;}
+function xpIn(x){return (x||0)%XPL;}
+function lvX(sk){return lvFx(sk?.xp||0);}
+function titleFor(lv){return TITLES[Math.min(lv-1,TITLES.length-1)];}
+function skById(id){return ALL_SKILLS.find(s=>s.id===id)||SENSEI_SKILLS.find(s=>s.id===id)||{nm:id,ico:'⭐',bar:'#ccc'};}
+function today(){return new Date().toDateString();}
+function isDone(q){return(q.type==='daily'||q.type==='habit')?q.lastDone===today():!!q.done;}
+function fmtRp(n){return'Rp '+Math.round(n||0).toLocaleString('id-ID');}
+function rnd(){return 'q'+Date.now()+Math.floor(Math.random()*99999);}
+
+// ═══════ STATE ═══════
+function newState(){return{
+  role:'home',totalXp:0,
+  skills:Object.fromEntries(ALL_SKILLS.map(s=>[s.id,{xp:0}])),
+  sskills:Object.fromEntries(SENSEI_SKILLS.map(s=>[s.id,{xp:0}])),
+  quests:[],log:[],streak:0,lastActive:null,doneToday:0,
+  orbs:0,orbGoal:100,orbFills:0,savings:0,savingsGoal:10000000,
+  streams:[],lessons:[],items:[],jobs:[],achievements:{},
+  immC:0,pptMade:0,promoPosted:0,teachDays:0,
+  lessonFilter:'all',itemFilter:'all',jobFilter:'all',achFilter:'all',
+};}
+function loadS(){try{const r=localStorage.getItem('lq_v6');if(r)return JSON.parse(r);}catch(e){}return newState();}
+function saveS(){try{localStorage.setItem('lq_v6',JSON.stringify(S));}catch(e){}}
+
+let S=loadS();
+let CR=ROLES.find(r=>r.id===S.role)||ROLES[0];
+let curNav=CR.id==='home'?'overview':'quests';
+let curQTab='daily',pentaV='role';
+
+function chkStreak(){
+  const t=today();if(S.lastActive===t)return;
+  const y=new Date(Date.now()-86400000).toDateString();
+  S.streak=(S.lastActive===y)?(S.streak||0)+1:1;
+  S.lastActive=t;S.doneToday=0;saveS();
+}
+
+// ═══════ ACHIEVEMENTS ═══════
+function evalAch(){
+  const nw=[];
+  ACHS.forEach(a=>{
+    if(!S.achievements[a.id]){let ok=false;try{ok=a.req(S);}catch(e){}
+      if(ok){S.achievements[a.id]=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});nw.push(a);}}
+  });
+  if(nw.length){saveS();nw.forEach((a,i)=>setTimeout(()=>showToast(`🏆 ${a.nm}: ${a.dsc}`),i*700));}
+}
+
+// ═══════ PROGRESSIVE QUEST SYSTEM ═══════
+// unlockAfter: array of quest IDs that must be done first (at least 1)
+// unlockAll: array of quest IDs that ALL must be done
+// stage: display label
+// Daily tracker config — cumulative goals shown as progress bars
+const DAILY_TRACKER={
+  'hd01':{unit:'min',  goal:1000, label:'Guitar Practice'},
+  'hd02':{unit:'days', goal:100,  label:'Vocal Warm-up'},
+  'hd03':{unit:'days', goal:100,  label:'Morning Exercise'},
+  'hd04':{unit:'days', goal:200,  label:'8 Glasses Water'},
+  'hd05':{unit:'days', goal:100,  label:'Make Bed'},
+  'hd06':{unit:'days', goal:100,  label:'Bath'},
+  'hd07':{unit:'days', goal:100,  label:'Read 10 min'},
+  'hd08':{unit:'days', goal:100,  label:'Meditate'},
+  'hd09':{unit:'days', goal:50,   label:'Bake/Cook'},
+  'td01':{unit:'days', goal:200,  label:'Lesson Prepared'},
+  'td02':{unit:'days', goal:200,  label:'Zoom Class'},
+  'td03':{unit:'days', goal:200,  label:'Mandarin Sentence'},
+  'td04':{unit:'days', goal:100,  label:'Student Review'},
+  'md01':{unit:'days', goal:365,  label:'Card Pulled'},
+  'md02':{unit:'days', goal:300,  label:'Card Journaled'},
+  'rd01':{unit:'min',  goal:500,  label:'Guitar (Rui)'},
+  'rd02':{unit:'days', goal:200,  label:'Vocal (Rui)'},
+  'rd03':{unit:'days', goal:200,  label:'Content Idea'},
+};
+
+const QUEST_CATALOG=[
+  // ══════ HOME DAILY ══════
+  {id:'hd01',nm:'Practice guitar 30 min',               type:'daily',sk:'guitar',  xp:10,role:'home',   ord:1},
+  {id:'hd02',nm:'Vocal warm-up & solfège',               type:'daily',sk:'singing', xp:10,role:'home',   ord:2},
+  {id:'hd03',nm:'Morning exercise',                      type:'daily',sk:'fitness', xp:5, role:'home',   ord:3},
+  {id:'hd04',nm:'Drink 8 glasses of water',              type:'daily',sk:'fitness', xp:5, role:'home',   ord:4},
+  {id:'hd05',nm:'Make your bed first thing',             type:'daily',sk:'focus',   xp:5, role:'home',   ord:5},
+  {id:'hd06',nm:'Take a refreshing bath ✨',             type:'daily',sk:'fitness', xp:5, role:'home',   ord:6},
+  {id:'hd07',nm:'Read 10 min before bed',                type:'daily',sk:'english', xp:5, role:'home',   ord:7},
+  {id:'hd08',nm:'Meditate 10 min',                       type:'daily',sk:'focus',   xp:10,role:'home',   ord:8},
+  {id:'hd09',nm:'Bake or cook something 🧁',            type:'daily',sk:'baking',  xp:10,role:'home',   ord:9},
+  // ══════ HOME HABIT ══════
+  {id:'hh01',nm:'No sugar today',                        type:'habit',sk:'fitness', xp:10,role:'home',   ord:1},
+  {id:'hh02',nm:'Sleep before midnight',                 type:'habit',sk:'fitness', xp:10,role:'home',   ord:2},
+  {id:'hh03',nm:'No social media first 30 min of day',  type:'habit',sk:'focus',   xp:10,role:'home',   ord:3},
+  {id:'hh04',nm:'Write 3 things I\'m grateful for',     type:'habit',sk:'focus',   xp:5, role:'home',   ord:4},
+  {id:'hh05',nm:'5 min stretching or yoga',              type:'habit',sk:'fitness', xp:5, role:'home',   ord:5},
+  {id:'hh06',nm:'Take vitamins or supplements',          type:'habit',sk:'fitness', xp:5, role:'home',   ord:6},
+  {id:'hh07',nm:'Eat breakfast — don\'t skip',           type:'habit',sk:'fitness', xp:5, role:'home',   ord:7},
+  {id:'hh08',nm:'Journal 1 feeling or thought',          type:'habit',sk:'focus',   xp:10,role:'home',   ord:8},
+  {id:'hh09',nm:'No phone 30 min before sleep',          type:'habit',sk:'focus',   xp:10,role:'home',   ord:9},
+  {id:'hh10',nm:'Deep breathing 5 min',                  type:'habit',sk:'focus',   xp:5, role:'home',   ord:10},
+  {id:'hh11',nm:'Walk outside at least 10 min',          type:'habit',sk:'fitness', xp:5, role:'home',   ord:11},
+  {id:'hh12',nm:'Note 1 thing I learned today',          type:'habit',sk:'focus',   xp:5, role:'home',   ord:12},
+  {id:'hh13',nm:'Drink warm water in the morning',       type:'habit',sk:'fitness', xp:5, role:'home',   ord:13},
+  {id:'hh14',nm:'Say one affirmation out loud',          type:'habit',sk:'focus',   xp:5, role:'home',   ord:14},
+  {id:'hh15',nm:'Spend time in natural light',           type:'habit',sk:'fitness', xp:5, role:'home',   ord:15},
+  {id:'hh16',nm:'Put phone away during meals',           type:'habit',sk:'focus',   xp:5, role:'home',   ord:16},
+  // ══════ HOME WEEKLY ══════
+  {id:'hw01',nm:'Deep clean bedroom',                    type:'weekly',sk:'focus',  xp:15,role:'home',   ord:1},
+  {id:'hw02',nm:'Change bed cover',                      type:'weekly',sk:'focus',  xp:10,role:'home',   ord:2},
+  {id:'hw03',nm:'Review goals for this week',            type:'weekly',sk:'focus',  xp:10,role:'home',   ord:3},
+  {id:'hw04',nm:'Call or message someone I care about',  type:'weekly',sk:'focus',  xp:10,role:'home',   ord:4},
+  {id:'hw05',nm:'Do a creative activity for fun',        type:'weekly',sk:'focus',  xp:15,role:'home',   ord:5},
+  {id:'hw06',nm:'Skincare or self-care routine',         type:'weekly',sk:'fitness',xp:10,role:'home',   ord:6},
+  {id:'hw07',nm:'Meal prep or plan healthy meals',       type:'weekly',sk:'fitness',xp:10,role:'home',   ord:7},
+  {id:'hw08',nm:'Declutter one small area',              type:'weekly',sk:'focus',  xp:10,role:'home',   ord:8},
+  {id:'hw09',nm:'Write a letter to future self',         type:'weekly',sk:'focus',  xp:15,role:'home',   ord:9},
+  {id:'hw10',nm:'Do something kind for someone else',    type:'weekly',sk:'focus',  xp:10,role:'home',   ord:10},
+  // ══════ HOME QUEST ══════
+  {id:'hq01',nm:'Learn to bake a new recipe from scratch',          type:'quest',sk:'baking', xp:30,role:'home',ord:1},
+  {id:'hq02',nm:'Read a full book this month',                      type:'quest',sk:'english',xp:40,role:'home',ord:2},
+  {id:'hq03',nm:'Go 7 days without sugar',                          type:'quest',sk:'fitness',xp:30,role:'home',ord:3},
+  {id:'hq04',nm:'Complete a 30-day exercise streak',                type:'quest',sk:'fitness',xp:50,role:'home',ord:4},
+  {id:'hq05',nm:'Journal every day for 14 days',                    type:'quest',sk:'focus',  xp:30,role:'home',ord:5},
+  {id:'hq06',nm:'Learn 1 new guitar song completely',               type:'quest',sk:'guitar', xp:40,role:'home',ord:6},
+  {id:'hq07',nm:'Hit 100 days of vocal warm-up',                    type:'quest',sk:'singing',xp:50,role:'home',ord:7},
+  {id:'hq08',nm:'Sleep before 11pm for 14 days',                    type:'quest',sk:'fitness',xp:30,role:'home',ord:8},
+
+  // ══════ TEACHER DAILY ══════
+  {id:'td01',nm:'Prepare today\'s lesson plan',          type:'daily',sk:'s_pln',  xp:10,role:'teacher',ord:1},
+  {id:'td02',nm:'Teach Zoom class',                      type:'daily',sk:'s_man',  xp:20,role:'teacher',ord:2},
+  {id:'td03',nm:'Write 1 Mandarin sentence',             type:'daily',sk:'s_man',  xp:5, role:'teacher',ord:3},
+  {id:'td04',nm:'Review student notes',                  type:'daily',sk:'s_pln',  xp:5, role:'teacher',ord:4},
+  {id:'td05',nm:'Listen to 10 min Mandarin audio',       type:'daily',sk:'s_imm',  xp:5, role:'teacher',ord:5},
+  {id:'td06',nm:'Think of 1 better teaching method',     type:'daily',sk:'s_imm',  xp:5, role:'teacher',ord:6},
+  // ══════ TEACHER HABIT ══════
+  {id:'th01',nm:'Study 1 new Mandarin grammar point',    type:'habit',sk:'s_man',  xp:10,role:'teacher',ord:1},
+  {id:'th02',nm:'Review HSK vocabulary set',             type:'habit',sk:'s_biz',  xp:10,role:'teacher',ord:2},
+  {id:'th03',nm:'Note 1 student struggle to address',    type:'habit',sk:'s_pln',  xp:5, role:'teacher',ord:3},
+  {id:'th04',nm:'Use 1 new Mandarin word naturally',     type:'habit',sk:'s_man',  xp:5, role:'teacher',ord:4},
+  {id:'th05',nm:'Record 1 vocab or phrase in Mandarin',  type:'habit',sk:'s_cnt',  xp:5, role:'teacher',ord:5},
+  {id:'th06',nm:'Speak Mandarin to yourself for 5 min',  type:'habit',sk:'s_imm',  xp:10,role:'teacher',ord:6},
+  // ══════ TEACHER WEEKLY ══════
+  {id:'tw01',nm:'Create 1 new student worksheet',        type:'weekly',sk:'s_mat', xp:20,role:'teacher',ord:1},
+  {id:'tw02',nm:'Plan next week\'s full lesson',         type:'weekly',sk:'s_pln', xp:20,role:'teacher',ord:2},
+  {id:'tw03',nm:'Post tutoring promo content',           type:'weekly',sk:'s_mkt', xp:15,role:'teacher',ord:3},
+  {id:'tw04',nm:'Research new teaching method',          type:'weekly',sk:'s_imm', xp:15,role:'teacher',ord:4},
+  {id:'tw05',nm:'Make a PPT slide or visual aid',        type:'weekly',sk:'s_ppt', xp:15,role:'teacher',ord:5},
+  {id:'tw06',nm:'Review all student progress notes',     type:'weekly',sk:'s_pln', xp:10,role:'teacher',ord:6},
+  {id:'tw07',nm:'Prepare exercises for liveworksheet',   type:'weekly',sk:'s_mat', xp:15,role:'teacher',ord:7},
+  {id:'tw08',nm:'Send lesson summary to students',       type:'weekly',sk:'s_mkt', xp:10,role:'teacher',ord:8},
+  // ══════ TEACHER QUEST ══════
+  {id:'tq01',nm:'Design full 3-month HSK 1 syllabus',   type:'quest',sk:'s_pln',  xp:50,role:'teacher',ord:1},
+  {id:'tq02',nm:'Create welcome kit for new students',   type:'quest',sk:'s_mat',  xp:30,role:'teacher',ord:2},
+  {id:'tq03',nm:'Make a PPT for first lesson intro',     type:'quest',sk:'s_ppt',  xp:30,role:'teacher',ord:3},
+  {id:'tq04',nm:'Record a short teaching reel for promo',type:'quest',sk:'s_cnt',  xp:40,role:'teacher',ord:4},
+  {id:'tq05',nm:'Design a full immersion lesson plan',   type:'quest',sk:'s_imm',  xp:40,role:'teacher',ord:5},
+  {id:'tq06',nm:'Get first student testimonial',         type:'quest',sk:'s_mkt',  xp:30,role:'teacher',ord:6},
+  {id:'tq07',nm:'Create student progress tracker sheet', type:'quest',sk:'s_mat',  xp:25,role:'teacher',ord:7},
+  {id:'tq08',nm:'Teach 1 full class purely in Mandarin', type:'quest',sk:'s_imm',  xp:50,role:'teacher',ord:8},
+  {id:'tq09',nm:'Build a 汉语会话360句 exercise bank',    type:'quest',sk:'s_mat',  xp:40,role:'teacher',ord:9},
+  {id:'tq10',nm:'Post 5 educational Mandarin content',   type:'quest',sk:'s_mkt',  xp:30,role:'teacher',ord:10},
+
+  // ══════ MYSTIC DAILY ══════
+  {id:'md01',nm:'Pull tarot card of the day',            type:'daily',sk:'tarot',  xp:5, role:'mystic',  ord:1},
+  {id:'md02',nm:'Note today\'s card in journal',         type:'daily',sk:'tarot',  xp:5, role:'mystic',  ord:2},
+  {id:'md03',nm:'Meditate 10 min before reading',        type:'daily',sk:'focus',  xp:5, role:'mystic',  ord:3},
+  {id:'md04',nm:'Read 1 tarot or astrology article',     type:'daily',sk:'tarot',  xp:5, role:'mystic',  ord:4},
+  // ══════ MYSTIC HABIT ══════
+  {id:'mh01',nm:'Practice a Bazi chart reading',         type:'habit',sk:'tarot',  xp:10,role:'mystic',  ord:1},
+  {id:'mh02',nm:'Write one intuitive insight',           type:'habit',sk:'tarot',  xp:5, role:'mystic',  ord:2},
+  {id:'mh03',nm:'Describe 1 card story without looking', type:'habit',sk:'tarot',  xp:10,role:'mystic',  ord:3},
+  {id:'mh04',nm:'Practice storytelling for 1 Bazi chart',type:'habit',sk:'tarot',  xp:10,role:'mystic',  ord:4},
+  {id:'mh05',nm:'Translate a Bazi chart directly',       type:'habit',sk:'tarot',  xp:15,role:'mystic',  ord:5},
+  // ══════ MYSTIC WEEKLY ══════
+  {id:'mw01',nm:'Study 5 tarot cards in depth',          type:'weekly',sk:'tarot', xp:20,role:'mystic',  ord:1},
+  {id:'mw02',nm:'Review a past reading accuracy',        type:'weekly',sk:'tarot', xp:15,role:'mystic',  ord:2},
+  {id:'mw03',nm:'Write storytelling for 1 Bazi chart',   type:'weekly',sk:'tarot', xp:20,role:'mystic',  ord:3},
+  {id:'mw04',nm:'Do a Celtic Cross reading for yourself',type:'weekly',sk:'tarot', xp:20,role:'mystic',  ord:4},
+  {id:'mw05',nm:'Prepare for upcoming client reading',   type:'weekly',sk:'tarot', xp:15,role:'mystic',  ord:5},
+  {id:'mw06',nm:'Study 1 Bazi element or pillar deeply', type:'weekly',sk:'tarot', xp:20,role:'mystic',  ord:6},
+  // ══════ MYSTIC QUEST ══════
+  {id:'mq01',nm:'Study full Major Arcana (22 cards)',    type:'quest',sk:'tarot',  xp:50,role:'mystic',  ord:1},
+  {id:'mq02',nm:'Study full Cups suit (14 cards)',       type:'quest',sk:'tarot',  xp:30,role:'mystic',  ord:2},
+  {id:'mq03',nm:'Study full Wands suit (14 cards)',      type:'quest',sk:'tarot',  xp:30,role:'mystic',  ord:3},
+  {id:'mq04',nm:'Study full Swords suit (14 cards)',     type:'quest',sk:'tarot',  xp:30,role:'mystic',  ord:4},
+  {id:'mq05',nm:'Study full Pentacles suit (14 cards)',  type:'quest',sk:'tarot',  xp:30,role:'mystic',  ord:5},
+  {id:'mq06',nm:'Do a 3-card reading for yourself',      type:'quest',sk:'tarot',  xp:20,role:'mystic',  ord:6},
+  {id:'mq07',nm:'Schedule your first paid tarot client', type:'quest',sk:'tarot',  xp:40,role:'mystic',  ord:7},
+  {id:'mq08',nm:'Complete 10 client readings',           type:'quest',sk:'tarot',  xp:50,role:'mystic',  ord:8},
+  {id:'mq09',nm:'Bazi chart without translating first',  type:'quest',sk:'tarot',  xp:50,role:'mystic',  ord:9},
+  {id:'mq10',nm:'Write your personal reading style guide',type:'quest',sk:'tarot', xp:30,role:'mystic',  ord:10},
+  {id:'mq11',nm:'Create a client intake form',           type:'quest',sk:'tarot',  xp:20,role:'mystic',  ord:11},
+  {id:'mq12',nm:'Build a Bazi case study library (5+)',  type:'quest',sk:'tarot',  xp:40,role:'mystic',  ord:12},
+
+  // ══════ RUI DAILY ══════
+  {id:'rd01',nm:'Practice guitar 15-30 min',             type:'daily',sk:'guitar', xp:10,role:'rui',     ord:1},
+  {id:'rd02',nm:'Vocal warm-up as Rui',                  type:'daily',sk:'singing',xp:10,role:'rui',     ord:2},
+  {id:'rd03',nm:'Brainstorm 1 VTuber content idea',      type:'daily',sk:'vtuber', xp:5, role:'rui',     ord:3},
+  {id:'rd04',nm:'Write 1 line in Rui\'s lore journal',   type:'daily',sk:'vtuber', xp:5, role:'rui',     ord:4},
+  // ══════ RUI HABIT ══════
+  {id:'rh01',nm:'Watch 1 VTuber for research',           type:'habit',sk:'vtuber', xp:5, role:'rui',     ord:1},
+  {id:'rh02',nm:'Practice solfège 10 min (do re mi)',    type:'habit',sk:'singing',xp:10,role:'rui',     ord:2},
+  {id:'rh03',nm:'Say something as Rui — in character',   type:'habit',sk:'voice',  xp:5, role:'rui',     ord:3},
+  {id:'rh04',nm:'Check Rui\'s social analytics',         type:'habit',sk:'vtuber', xp:5, role:'rui',     ord:4},
+  // ══════ RUI WEEKLY ══════
+  {id:'rw01',nm:'Plan next week\'s stream schedule',     type:'weekly',sk:'vtuber',xp:15,role:'rui',     ord:1},
+  {id:'rw02',nm:'Design or draft a new emote/asset',     type:'weekly',sk:'vtuber',xp:20,role:'rui',     ord:2},
+  {id:'rw03',nm:'Record a clip or short as Rui',         type:'weekly',sk:'vtuber',xp:20,role:'rui',     ord:3},
+  {id:'rw04',nm:'Engage with 5 community members',       type:'weekly',sk:'vtuber',xp:10,role:'rui',     ord:4},
+  {id:'rw05',nm:'Write Rui\'s tweet or post for the week',type:'weekly',sk:'vtuber',xp:10,role:'rui',    ord:5},
+  {id:'rw06',nm:'Save money toward L2D goal',            type:'weekly',sk:'focus', xp:10,role:'rui',     ord:6},
+  // ══════ RUI QUEST ══════
+  {id:'rq01',nm:'Set up all VTuber social accounts',     type:'quest',sk:'vtuber', xp:30,role:'rui',     ord:1},
+  {id:'rq02',nm:'Write Rui\'s full lore & backstory',    type:'quest',sk:'vtuber', xp:30,role:'rui',     ord:2},
+  {id:'rq03',nm:'Design Rui\'s debut tweet/announcement',type:'quest',sk:'vtuber', xp:20,role:'rui',     ord:3},
+  {id:'rq04',nm:'Record Rui\'s debut intro video',       type:'quest',sk:'vtuber', xp:50,role:'rui',     ord:4},
+  {id:'rq05',nm:'Do first public livestream as Rui',     type:'quest',sk:'vtuber', xp:50,role:'rui',     ord:5},
+  {id:'rq06',nm:'Cover a full song and upload it',       type:'quest',sk:'singing',xp:50,role:'rui',     ord:6},
+  {id:'rq07',nm:'Reach 100 orbs (first bowl fill)',      type:'quest',sk:'vtuber', xp:30,role:'rui',     ord:7},
+  {id:'rq08',nm:'Research L2D artists & get 3 quotes',   type:'quest',sk:'vtuber', xp:20,role:'rui',     ord:8},
+  {id:'rq09',nm:'Save Rp 1,000,000 toward L2D',          type:'quest',sk:'focus',  xp:30,role:'rui',     ord:9},
+  {id:'rq10',nm:'Design Rui\'s YouTube channel layout',  type:'quest',sk:'vtuber', xp:30,role:'rui',     ord:10},
+
+  // ══════ SEEKER DAILY ══════
+  {id:'sd01',nm:'Spend 15 min on CV or application',     type:'daily',sk:'focus',  xp:10,role:'seeker',  ord:1},
+  {id:'sd02',nm:'Check job listings',                    type:'daily',sk:'focus',  xp:5, role:'seeker',  ord:2},
+  // ══════ SEEKER HABIT ══════
+  {id:'shh1',nm:'Check LinkedIn notifications',          type:'habit',sk:'focus',  xp:5, role:'seeker',  ord:1},
+  {id:'shh2',nm:'Read 1 industry or career article',     type:'habit',sk:'english',xp:5, role:'seeker',  ord:2},
+  {id:'shh3',nm:'Practice self-intro in mirror',         type:'habit',sk:'english',xp:5, role:'seeker',  ord:3},
+  {id:'shh4',nm:'Add items to relocation checklist',     type:'habit',sk:'focus',  xp:5, role:'seeker',  ord:4},
+  // ══════ SEEKER WEEKLY ══════
+  {id:'sw01',nm:'Apply to at least 2 jobs',              type:'weekly',sk:'focus', xp:30,role:'seeker',  ord:1},
+  {id:'sw02',nm:'Add 5 items to relocation list',        type:'weekly',sk:'focus', xp:10,role:'seeker',  ord:2},
+  {id:'sw03',nm:'Review & update CV section',            type:'weekly',sk:'focus', xp:15,role:'seeker',  ord:3},
+  {id:'sw04',nm:'Follow up on 1 application',            type:'weekly',sk:'focus', xp:15,role:'seeker',  ord:4},
+  {id:'sw05',nm:'Research 1 company in depth',           type:'weekly',sk:'focus', xp:10,role:'seeker',  ord:5},
+  // ══════ SEEKER QUEST ══════
+  {id:'sq01',nm:'List your core skills & strengths',     type:'quest',sk:'focus',  xp:10,role:'seeker',  ord:1},
+  {id:'sq02',nm:'Update CV draft (education + experience)',type:'quest',sk:'focus', xp:20,role:'seeker',  ord:2},
+  {id:'sq03',nm:'Update LinkedIn profile & photo',       type:'quest',sk:'focus',  xp:20,role:'seeker',  ord:3},
+  {id:'sq04',nm:'List 10 target companies in Jakarta',   type:'quest',sk:'focus',  xp:10,role:'seeker',  ord:4},
+  {id:'sq05',nm:'Write a cover letter template',         type:'quest',sk:'english',xp:20,role:'seeker',  ord:5},
+  {id:'sq06',nm:'Ask someone to review your CV',         type:'quest',sk:'focus',  xp:10,role:'seeker',  ord:6},
+  {id:'sq07',nm:'Send first job application',            type:'quest',sk:'focus',  xp:30,role:'seeker',  ord:7},
+  {id:'sq08',nm:'Apply to 3 different companies',        type:'quest',sk:'focus',  xp:30,role:'seeker',  ord:8},
+  {id:'sq09',nm:'Prep 5 common interview answers',       type:'quest',sk:'english',xp:20,role:'seeker',  ord:9},
+  {id:'sq10',nm:'Practice self-intro in 1 minute',       type:'quest',sk:'english',xp:20,role:'seeker',  ord:10},
+  {id:'sq11',nm:'Record yourself in mock interview',     type:'quest',sk:'english',xp:30,role:'seeker',  ord:11},
+  {id:'sq12',nm:'Research Mandarin interview questions',  type:'quest',sk:'mandarin',xp:20,role:'seeker', ord:12},
+  {id:'sq13',nm:'Complete relocation checklist 50%',     type:'quest',sk:'focus',  xp:30,role:'seeker',  ord:13},
+  {id:'sq14',nm:'Pack first box for Jakarta move',       type:'quest',sk:'focus',  xp:20,role:'seeker',  ord:14},
+];
+// Simple seed - no locking, sorted by ord
+function seed(){
+  if(S.quests.length>0)return;
+  S.quests=QUEST_CATALOG.map(c=>({
+    id:rnd(),catalogId:c.id,nm:c.nm,type:c.type,sk:c.sk,xp:c.xp,
+    role:c.role,ord:c.ord||99,done:false,lastDone:null,surprise:false,
+  }));
+  saveS();
+}
+
+function syncCatalogQuests(){
+  const existing=new Set(S.quests.map(q=>q.catalogId).filter(Boolean));
+  let added=0;
+  QUEST_CATALOG.forEach(c=>{
+    if(existing.has(c.id))return;
+    S.quests.push({id:rnd(),catalogId:c.id,nm:c.nm,type:c.type,sk:c.sk,xp:c.xp,
+      role:c.role,ord:c.ord||99,done:false,lastDone:null,surprise:false});
+    added++;
+  });
+  if(added>0){saveS();showToast(`✨ ${added} new quest${added>1?'s':''} added!`);}
+}
+
+// ═══════ RENDER CORE ═══════
+function renderRoles(){
+  document.getElementById('role-row').innerHTML=ROLES.map(r=>`
+    <button class="rbtn${r.id===CR.id?' active':''}" onclick="switchRole('${r.id}')">
+      <span class="r-ico">${r.ico}</span><span class="r-lbl">${r.lbl}</span>
+    </button>`).join('');
+}
+
+function renderStrip(){
+  const lv=lvFx(S.totalXp),xp=xpIn(S.totalXp),pct=Math.round(xp/XPL*100),ach=Object.keys(S.achievements||{}).length;
+  document.getElementById('cs-spr').textContent=CR.spr;
+  document.getElementById('cs-nm').textContent=CR.nm;
+  document.getElementById('cs-rl').textContent=CR.rl;
+  document.getElementById('cs-lv').textContent='Lv.'+lv;
+  document.getElementById('cs-bar').style.cssText=`width:${pct}%;background:${CR.bar};`;
+  document.getElementById('cs-xp').textContent=xp+'/'+XPL+' XP';
+  document.getElementById('cs-chips').innerHTML=`<span class="chip cp">⭐ ${titleFor(lv)}</span><span class="chip cg">🔥 ${S.streak||0} streak</span><span class="chip ct">✓ ${S.doneToday||0} today</span><span class="chip ca">🏆 ${ach}</span>`;
+}
+
+function getNavItems(){
+  if(CR.id==='home'){
+    return[
+      {id:'overview',lbl:'🏠 Overview'},
+      {id:'quests',  lbl:'⚔ Quests'},
+      {id:'skills',  lbl:'🌟 Skills'},
+      {id:'achieve', lbl:'🏆 Achieve'},
+    ];
+  }
+  const b=[
+    {id:'quests',lbl:'⚔ Quests'},
+    {id:'skills',lbl:'🌟 Skills'},
+  ];
+  if(CR.id==='rui')     b.push({id:'rui',     lbl:'🐉 Rui Hub'});
+  if(CR.id==='teacher') b.push({id:'classes', lbl:'📖 Classes'},{id:'lessons',lbl:'📋 Lessons'});
+  if(CR.id==='mystic')  b.push({id:'mystic',  lbl:'🔮 Mystic Hub'});
+  if(CR.id==='seeker')  b.push({id:'jobs',    lbl:'💼 Jobs'},{id:'relo',lbl:'📦 Relocate'});
+  return b;
+}
+
+function renderNav(){
+  const items=getNavItems();
+  if(!items.find(i=>i.id===curNav))curNav='quests';
+  document.getElementById('nav-tabs').innerHTML=items.map(i=>`<button class="ntab${curNav===i.id?' active':''}" onclick="switchNav('${i.id}')">${i.lbl}</button>`).join('');
+}
+
+function switchNav(n){curNav=n;renderNav();renderMain();}
+function switchRole(id){
+  CR=ROLES.find(r=>r.id===id)||ROLES[0];
+  S.role=id;
+  curNav=id==='home'?'overview':'quests';
+  curQTab='daily';
+  saveS();renderAll();
+}
+function renderAll(){renderRoles();renderStrip();renderNav();renderMain();}
+
+// ── Quest card helper (must be before all render functions) ──
+window._qmap={};
+function qCard(q,type){
+  const done=isDone(q),sk=skById(q.sk);
+  const sid=q.id.replace(/[^a-z0-9]/gi,'_');
+  window._qmap[sid]=q.id;
+  return`<div class="qcard${done?' done':''}">
+    <div class="qchk" onclick="handleQCheck('${sid}')">${done?'✓':''}</div>
+    <div class="qbody" onclick="handleQCheck('${sid}')">
+      <div class="qnm">${q.nm}${q.surprise?'<span class="sbdg">★ SURPRISE</span>':''}</div>
+      <div class="qmeta"><span class="qbdg b${(type||'q')[0]}">${type}</span><span class="qsk">${sk.ico} ${sk.nm}</span></div>
+    </div>
+    <div class="qr" onclick="event.stopPropagation()">
+      <span class="qxp">+${q.xp}</span>
+      ${done?`<button class="dbtn" title="Undo" onclick="handleQUndo('${sid}')" style="color:var(--accent);font-size:14px;">↩</button>`:''}
+      <button class="dbtn" title="Delete" onclick="handleQDel('${sid}','${encodeURIComponent(q.nm)}')">🗑</button>
+    </div>
+  </div>`;
+}
+function handleQCheck(sid){const id=window._qmap[sid];if(id)toggleQ(id);}
+function handleQUndo(sid){const id=window._qmap[sid];if(id)undoQ(id);}
+function handleQDel(sid,nm){
+  const id=window._qmap[sid];if(!id)return;
+  if(window.confirm('Delete quest:\n"'+decodeURIComponent(nm)+'"\n\nThis cannot be undone.'))delQ(id);
+}
+
+
+// ═══════ MAIN ROUTER ═══════
+function renderMain(){
+  const el=document.getElementById('main');
+  ({overview:()=>renderOverview(el),quests:()=>renderQuests(el),skills:()=>renderSkills(el),achieve:()=>renderAchieve(el),
+    rui:()=>renderRui(el),classes:()=>renderClasses(el),lessons:()=>renderLessons(el),
+    relo:()=>renderRelo(el),jobs:()=>renderJobs(el),mystic:()=>renderMystic(el)}[curNav]||renderOverview)(el);
+}
+
+// ═══════ HOME OVERVIEW ═══════
+function renderOverview(el){
+  const lv=lvFx(S.totalXp),totalDone=S.log.length;
+  const todayDone=S.quests.filter(q=>isDone(q)&&q.lastDone===today()).length;
+  const streak=S.streak||0;
+  const ach=Object.keys(S.achievements||{}).length;
+  // Today's quests across all roles
+  const allToday=S.quests.filter(q=>(q.type==='daily'||q.type==='habit')&&!isDone(q)).slice(0,5);
+  // XP by role
+  const roleXp={home:0,rui:0,teacher:0,mystic:0,seeker:0};
+  S.log.forEach(l=>{
+    const q=S.quests.find(x=>x.nm===l.nm);
+    if(q&&roleXp[q.role]!==undefined)roleXp[q.role]=(roleXp[q.role]||0)+l.xp;
+  });
+  el.innerHTML=`
+  <!-- Daily snapshot -->
+  <div class="card" style="--ct:linear-gradient(90deg,var(--accent),var(--pink));">
+    <div class="ctitle">TODAY'S SNAPSHOT</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+      ${[['⭐','Lv.'+lv,'Level'],['🔥',streak,'Streak'],['✓',todayDone,'Done today'],['🏆',ach,'Achieved']].map(([ico,val,lbl])=>`
+      <div style="background:var(--panel2);border:1.5px solid var(--border);border-radius:10px;padding:8px;text-align:center;">
+        <div style="font-size:18px;margin-bottom:2px;">${ico}</div>
+        <div style="font-size:16px;font-weight:900;color:var(--accent);">${val}</div>
+        <div style="font-size:9px;color:var(--text3);font-weight:700;">${lbl}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- Pending from all roles -->
+    <div style="font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:7px;">⚡ Pending across all roles</div>
+    ${allToday.length===0?`<div style="font-size:12px;color:var(--green);font-weight:700;text-align:center;padding:8px;">🎉 All caught up today!</div>`
+    :allToday.map(q=>{
+      const role=ROLES.find(r=>r.id===q.role);
+      const sk=skById(q.sk);
+      return`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--panel);border:1.5px solid var(--border);border-radius:9px;margin-bottom:5px;cursor:pointer;" onclick="switchRole('${q.role}');switchNav('quests');">
+        <span style="font-size:14px;">${role?.ico||'⭐'}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${q.nm}</div>
+          <div style="font-size:9px;color:var(--text3);">${role?.lbl||q.role} · ${sk.ico} ${sk.nm}</div>
+        </div>
+        <span style="font-size:10px;font-weight:900;color:var(--accent);">+${q.xp}</span>
+      </div>`;}).join('')}
+    ${allToday.length>0?`<div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px;">Tap any to go to that role's quest board</div>`:''}
+  </div>
+
+  <!-- Role XP bars -->
+  <div class="card" style="--ct:linear-gradient(90deg,var(--gold2),var(--gold));">
+    <div class="ctitle">ROLE ACTIVITY</div>
+    ${ROLES.filter(r=>r.id!=='home').map(r=>{
+      const xp=roleXp[r.id]||0;
+      const roleQ=S.quests.filter(q=>q.role===r.id);
+      const roleDone=roleQ.filter(q=>isDone(q)).length;
+      return`<div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:800;">${r.ico} ${r.lbl}</span>
+          <span style="font-size:10px;color:var(--text3);">${roleDone}/${roleQ.length} done · ${xp} XP</span>
+        </div>
+        <div class="btrack"><div class="bfill" style="width:${Math.min(xp/5,100)}%;background:${r.bar};"></div></div>
+      </div>`;}).join('')}
+  </div>
+
+  <!-- Recent log -->
+  <div class="card" style="--ct:linear-gradient(90deg,var(--teal),var(--green));">
+    <div class="ctitle">ADVENTURE LOG <em>· ${totalDone} total</em></div>
+    ${S.log.length===0?`<div class="empty"><span class="ei">⚔️</span>No quests completed yet!</div>`
+    :[...S.log].reverse().slice(0,8).map(l=>`
+      <div class="litem">
+        <div class="ll"><span style="font-size:16px">${l.ico||'⭐'}</span>
+          <div><div class="lname">${l.nm}</div><div class="ltype">${l.type||''} · ${l.sk||''}</div></div>
+        </div>
+        <div style="text-align:right"><div class="lxp">+${l.xp} XP</div><div class="ltime">${l.time}</div></div>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ═══════ QUESTS ═══════
+function renderQuests(el){
+  const ts=['daily','habit','weekly','quest','log'],ls=['Daily','Habits','Weekly','Quests','Log ⚔'];
+  el.innerHTML=`<div class="tabs">${ts.map((t,i)=>`<button class="tab${curQTab===t?' active':''}" onclick="setQTab('${t}')">${ls[i]}</button>`).join('')}</div><div id="qbody"></div>`;
+  renderQBody();
+}
+function setQTab(t){curQTab=t;renderMain();}
+
+function todayLabel(){
+  return new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+function getDailyCount(catalogId){
+  return (S.dailyCounts||{})[catalogId]||0;
+}
+
+function renderQBody(){
+  const el=document.getElementById('qbody');if(!el)return;
+  if(curQTab==='log'){renderLog(el);return;}
+  const type=curQTab;
+  const isSn=CR.id==='teacher';
+  const skList=isSn?SENSEI_SKILLS:ALL_SKILLS.filter(s=>(ROLE_SKILLS[CR.id]||[]).includes(s.id));
+
+  const qs=[...S.quests.filter(q=>q.type===type&&q.role===CR.id)]
+    .sort((a,b)=>(a.ord||99)-(b.ord||99));
+
+  let html='';
+
+  if(type==='daily'){
+    const doneCnt=qs.filter(q=>isDone(q)).length;
+    html+=`<div style="background:linear-gradient(135deg,${CR.clr}22,${CR.clr}11);border:1.5px solid ${CR.clr}55;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:9px;font-weight:900;letter-spacing:1.5px;color:${CR.clr};text-transform:uppercase;">Today</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:2px;">${todayLabel()}</div>
+      </div>
+      <div style="font-size:13px;font-weight:900;color:${CR.clr};">${doneCnt}/${qs.length}</div>
+    </div>`;
+    const tracked=qs.filter(q=>q.catalogId&&DAILY_TRACKER[q.catalogId]);
+    if(tracked.length>0){
+      html+=`<div style="background:var(--panel2);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+        <div style="font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;">📊 Cumulative Progress</div>`;
+      tracked.forEach(q=>{
+        const cfg=DAILY_TRACKER[q.catalogId];
+        const count=getDailyCount(q.catalogId);
+        const pct=Math.min(Math.round(count/cfg.goal*100),100);
+        html+=`<div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--text2);margin-bottom:3px;">
+            <span>${cfg.label}</span><span style="color:${CR.clr};">${count}/${cfg.goal} ${cfg.unit}</span>
+          </div>
+          <div class="btrack" style="height:6px;"><div class="bfill" style="width:${pct}%;background:${CR.clr};"></div></div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+  }
+
+  html+=`<div class="apanel"><div class="atitle">+ New ${type} quest</div>
+    <div class="frow"><input class="fi" id="qn" placeholder="Quest name..." /></div>
+    <div class="frow">
+      <select class="fi" id="qs">${skList.map(s=>`<option value="${s.id}">${s.ico} ${s.nm}</option>`).join('')}</select>
+      <select class="fi" id="qx"><option value="5">+5 Easy</option><option value="10" selected>+10 Normal</option><option value="20">+20 Hard</option><option value="30">+30 Epic</option><option value="50">+50 Legendary</option></select>
+    </div>
+    <button class="bmain" onclick="addQuest('${type}')">+ ADD QUEST</button></div>`;
+
+  if(qs.length===0){
+    html+=`<div class="empty"><span class="ei">📜</span>No ${type} quests for ${CR.nm} yet!</div>`;
+  } else {
+    html+=`<div class="qlist">${qs.map(q=>qCard(q,type)).join('')}</div>`;
+  }
+  el.innerHTML=html;
+}
+
+function renderLog(el){
+  if(!S.log?.length){el.innerHTML=`<div class="empty"><span class="ei">⚔️</span>Complete quests to fill your log!</div>`;return;}
+  el.innerHTML=`<div>${[...S.log].reverse().slice(0,60).map(l=>`<div class="litem"><div class="ll"><span style="font-size:18px">${l.ico||'⭐'}</span><div><div class="lname">${l.nm}</div><div class="ltype">${l.type||''} · ${l.sk||''}</div></div></div><div style="text-align:right"><div class="lxp">+${l.xp} XP</div><div class="ltime">${l.time}</div></div></div>`).join('')}</div>`;
+}
+
+// ═══════ SKILLS ═══════
+function renderSkills(el){
+  const isSn=CR.id==='teacher';
+  const rSk=isSn?SENSEI_SKILLS:ALL_SKILLS.filter(s=>(ROLE_SKILLS[CR.id]||[]).includes(s.id));
+  const allSk=pentaV==='all'?(isSn?SENSEI_SKILLS:ALL_SKILLS):rSk;
+  const disp=allSk.slice(0,8);
+  const gXp=s=>isSn?(S.sskills[s.id]?.xp||0):(S.skills[s.id]?.xp||0);
+  el.innerHTML=`
+  <div class="card" style="--ct:linear-gradient(90deg,${CR.clr},var(--accent2));">
+    <div class="ctitle">SKILL MAP <em>/ 能力図</em>
+      <div class="ptog"><button class="ptbtn${pentaV==='role'?' active':''}" onclick="setPV('role')">Role</button><button class="ptbtn${pentaV==='all'?' active':''}" onclick="setPV('all')">All</button></div>
+    </div>
+    <div style="display:flex;justify-content:center;"><div style="background:var(--bg2);border-radius:50%;padding:6px;border:2px solid var(--border);"><canvas id="pc" width="210" height="210"></canvas></div></div>
+  </div>
+  <div class="card"><div class="ctitle">SKILL TREE <em>/ スキルツリー</em></div>
+    <div class="skrows">${rSk.map(s=>{const xp=gXp(s),lv=lvFx(xp),pct=Math.round(xpIn(xp)/XPL*100);
+      return`<div class="skrow"><div class="skico">${s.ico}</div><div class="skinf"><div class="sktop"><span class="sknm">${s.nm}</span><span class="sklb">Lv.${lv}</span></div><div class="skbt"><div class="skbf" style="width:${pct}%;background:${s.bar}"></div></div></div><span class="skxt">${xpIn(xp)}/${XPL}</span></div>`;}).join('')}
+    </div>
+  </div>
+  <div class="card" style="--ct:linear-gradient(90deg,var(--teal),var(--green));">
+    <div class="ctitle">TRAIN SKILL <em>/ 修行</em></div>
+    <div class="frow">
+      <select class="fi" id="tsk">${rSk.map(s=>`<option value="${s.id}">${s.ico} ${s.nm}</option>`).join('')}</select>
+      <select class="fi" id="txp"><option value="5">+5 Easy</option><option value="10" selected>+10 Normal</option><option value="20">+20 Hard</option><option value="30">+30 Epic</option><option value="50">+50 Legendary</option></select>
+    </div>
+    ${isSn?`<div class="frow"><label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;cursor:pointer;"><input type="checkbox" id="tppt"> Made PPT today</label><label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;cursor:pointer;"><input type="checkbox" id="tpromo"> Posted promo</label></div>`:''}
+    <button class="bmain" onclick="trainSkill()">▶ TRAIN</button>
+  </div>`;
+  drawPenta(disp,gXp,CR.clr);
+}
+
+function setPV(v){pentaV=v;renderMain();}
+
+function drawPenta(sks,gXp,color){
+  const cv=document.getElementById('pc');if(!cv)return;
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,cx=W/2,cy=H/2,R=Math.min(W,H)/2-28,n=sks.length;
+  if(n<3)return;ctx.clearRect(0,0,W,H);
+  const ang=i=>(2*Math.PI*i/n)-Math.PI/2;
+  const pt=(i,r)=>({x:cx+r*Math.cos(ang(i)),y:cy+r*Math.sin(ang(i))});
+  ctx.beginPath();ctx.arc(cx,cy,R+8,0,Math.PI*2);ctx.fillStyle='rgba(108,92,231,.04)';ctx.fill();
+  [.25,.5,.75,1].forEach(f=>{ctx.beginPath();for(let i=0;i<n;i++){const p=pt(i,R*f);i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);}ctx.closePath();ctx.strokeStyle=f===1?'rgba(108,92,231,.2)':'rgba(108,92,231,.1)';ctx.lineWidth=f===1?1.5:1;ctx.stroke();});
+  for(let i=0;i<n;i++){const p=pt(i,R);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);ctx.strokeStyle='rgba(108,92,231,.15)';ctx.lineWidth=1;ctx.stroke();}
+  ctx.beginPath();
+  for(let i=0;i<n;i++){const xp=gXp(sks[i]),lv=lvFx(xp),v=Math.min(((lv-1)*10+xpIn(xp)/XPL*10)/100,1),p=pt(i,R*Math.max(v,.05));i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);}
+  ctx.closePath();ctx.fillStyle=color+'44';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.stroke();
+  for(let i=0;i<n;i++){const xp=gXp(sks[i]),lv=lvFx(xp),v=Math.min(((lv-1)*10+xpIn(xp)/XPL*10)/100,1),p=pt(i,R*Math.max(v,.05));ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.stroke();}
+  ctx.font='bold 8px Nunito,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  for(let i=0;i<n;i++){const p=pt(i,R+20);ctx.fillStyle='#5a4fa0';ctx.fillText((sks[i].nm||'').slice(0,7)+' L'+lvFx(gXp(sks[i])),p.x,p.y);}
+}
+
+// ═══════ ACHIEVEMENTS ═══════
+function renderAchieve(el){
+  const f=S.achFilter||'all',list=f==='all'?ACHS:ACHS.filter(a=>a.cat===f);
+  const tot=ACHS.length,unl=Object.keys(S.achievements||{}).length,nxt=list.find(a=>!S.achievements[a.id]);
+  el.innerHTML=`<div class="card" style="--ct:linear-gradient(90deg,var(--gold2),var(--gold));">
+    <div class="ctitle">ACHIEVEMENTS <em>· ${unl}/${tot}</em></div>
+    <div class="btrack" style="margin-bottom:10px;height:10px;"><div class="bfill" style="width:${Math.round(unl/tot*100)}%;background:linear-gradient(90deg,var(--gold2),var(--gold));"></div></div>
+    <div class="afrow">${ACH_CATS.map(c=>`<button class="afbtn${f===c?' active':''}" onclick="setAF('${c}')">${c[0].toUpperCase()+c.slice(1)}</button>`).join('')}</div>
+    <div class="agrid">${list.map(a=>{const u=!!S.achievements[a.id],isN=!u&&a===nxt;
+      return`<div class="acard ${u?'unlocked':isN?'nextup':'locked'}">${!u&&!isN?'<span class="alck">🔒</span>':''}
+        <span class="aico">${a.ico}</span><div class="anm">${a.nm}</div><div class="adsc">${a.dsc}</div>
+        ${u?`<div style="font-size:8px;color:var(--gold2);font-weight:800;margin-top:2px">✓ ${S.achievements[a.id]}</div>`:''}
+        ${isN?'<div style="font-size:8px;color:var(--accent);font-weight:800;margin-top:2px">Next up!</div>':''}
+      </div>`;}).join('')}
+    </div></div>`;
+}
+function setAF(f){S.achFilter=f;saveS();renderMain();}
+
+// ═══════ RUI HUB ═══════
+function renderRui(el){
+  const pct=Math.min(Math.round((S.orbs/S.orbGoal)*100),100),sp=Math.min(Math.round((S.savings/S.savingsGoal)*100),100);
+  const ruiQ=S.quests.filter(q=>q.role==='rui'||q.sk==='vtuber');
+  el.innerHTML=`
+  <div class="lorebox"><div class="loretitle">🐉 Rui · Human Observer</div>
+    <div class="loretext">"My name is Rui. I am a dragon who walks among humans — watching, learning, collecting their stories.<br>It is not gold I seek. I collect <strong style="color:#a29bfe">human moments</strong>. Every tale fills my orb bowl — and when it overflows, I give back."</div>
+  </div>
+  <div class="card" style="--ct:linear-gradient(90deg,#00b894,#00cec9);">
+    <div class="ctitle">ORB BOWL <em>/ 宝珠</em></div>
+    <div style="text-align:center;margin-bottom:10px;">
+      <div class="orbbowl"><div class="orbfill" style="height:${pct}%;"></div><div class="orbcnt"><span class="orbnum">${S.orbs}</span><span class="orblbl">/ ${S.orbGoal}</span></div></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:700;">${pct}% · ${Math.max(S.orbGoal-S.orbs,0)} until gift 🎁</div>
+      <div class="orbtns"><button class="obtn oadd" onclick="addOrbs(1)">+1</button><button class="obtn oadd" onclick="addOrbs(5)">+5</button><button class="obtn oadd" onclick="addOrbs(10)">+10</button><button class="obtn oreset" onclick="resetOrbs()">Reset</button></div>
+    </div>
+  </div>
+  <div class="card" style="--ct:linear-gradient(90deg,#00b894,#55efc4);">
+    <div class="ctitle">L2D SAVINGS <em>· ${fmtRp(S.savings)} / ${fmtRp(S.savingsGoal)}</em></div>
+    <div style="font-size:20px;font-weight:900;color:var(--green);margin-bottom:4px;">${fmtRp(S.savings)}</div>
+    <div class="btrack" style="margin-bottom:10px;"><div class="bfill" style="width:${sp}%;background:linear-gradient(90deg,#00b894,#55efc4);"></div></div>
+    <div class="frow"><input class="fi" id="sav-in" type="number" placeholder="Add savings (Rp)..." /><button class="bmain" style="width:auto;padding:8px 16px;" onclick="addSavings()">+ Save</button></div>
+  </div>
+  <div class="card" style="--ct:linear-gradient(90deg,#74b9ff,#a29bfe);">
+    <div class="ctitle">STREAM LOG <em>/ 配信</em></div>
+    ${!(S.streams?.length)?`<div class="empty" style="padding:.8rem;"><span class="ei" style="font-size:22px">📺</span>No streams yet!</div>`
+    :[...S.streams].reverse().slice(0,5).map(st=>`<div style="background:var(--panel2);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div><div style="font-size:12px;font-weight:800;">${st.title}</div><div style="font-size:10px;color:var(--text3);">${st.date}</div></div><div style="display:flex;align-items:center;gap:6px;"><div style="text-align:right"><div style="font-size:13px;font-weight:900;color:var(--teal);">👁 ${st.views}</div>${st.note?`<div style="font-size:9px;color:var(--text3);">${st.note}</div>`:''}</div><button class="dbtn" onclick="delStream('${st.id}')">✕</button></div></div>`).join('')}
+    <div class="apanel" style="margin-top:8px;margin-bottom:0;">
+      <div class="frow"><input class="fi" id="st-t" placeholder="Stream title..." /><input class="fi" id="st-v" type="number" placeholder="Views" style="max-width:90px;"/></div>
+      <div class="frow"><input class="fi" id="st-n" placeholder="Notes / to improve..." /></div>
+      <button class="bmain" style="background:linear-gradient(135deg,var(--teal),var(--green));" onclick="addStream()">+ LOG STREAM</button>
+    </div>
+  </div>
+  <div class="card" style="--ct:linear-gradient(90deg,var(--pink),var(--accent2));">
+    <div class="ctitle">RUI QUESTS</div>
+    <div style="margin-bottom:8px;"><button class="bmain" style="background:linear-gradient(135deg,#e84393,var(--pink));" onclick="rollSurprise()">🎲 Roll Surprise Quest</button></div>
+    <div class="qlist">${ruiQ.slice(0,8).map(q=>qCard(q,q.type||'quest')).join('')||'<div class="empty" style="padding:1rem"><span class="ei">🎭</span>No Rui quests!</div>'}
+    </div>
+  </div>`;
+}
+
+// ═══════ CLASSES ═══════
+function renderClasses(el){
+  el.innerHTML=CLASS_PROFILES.map(cls=>`
+  <div class="scls ${cls.css}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><div class="snm">${cls.emoji} ${cls.nm}</div><div class="ssub">${cls.type}</div></div>
+      <span class="tag ${cls.tag}">${cls.css.toUpperCase()}</span>
+    </div>
+    <div class="ibox">${cls.desc}</div>
+    ${cls.sched?`<div class="ssec"><div class="ssect">Weekly Schedule</div><div class="wsched">${cls.sched.map(d=>`<div class="wday"><div class="wdl">${d.d}</div><div class="wdc">${d.c.replace(/\n/g,'<br>')}</div></div>`).join('')}</div></div>`:''}
+    <div class="ssec"><div class="ssect">Method</div><div class="ibox meth">${cls.method}</div></div>
+    <div class="ssec"><div class="ssect">💪 Strengths</div><div class="ibox str">${cls.strength}</div></div>
+    <div class="ssec"><div class="ssect">⚠ Gaps / To Develop</div><div class="ibox gap">${cls.gap}</div></div>
+    ${cls.ideas?.length?`<div class="ssec"><div class="ssect">💡 Activity Ideas</div>${cls.ideas.map(i=>`<div class="ibox" style="padding:6px 10px;margin-bottom:4px;">${i}</div>`).join('')}</div>`:''}
+    <div class="ssec"><div class="ssect">🔔 Your Reminders</div>
+      <div class="rembox"><div class="remtitle">⚡ Teacher Notes</div>${cls.reminders.map(r=>`<div style="display:flex;gap:6px;margin-bottom:2px;"><span>▸</span><span>${r}</span></div>`).join('')}</div>
+    </div>
+    <div class="ssec"><button class="bmain" onclick="quickLog('${cls.id}','${cls.nm}')">+ Quick Log Lesson for ${cls.nm}</button></div>
+  </div>`).join('');
+}
+
+// ═══════ LESSONS ═══════
+function renderLessons(el){
+  const f=S.lessonFilter||'all',all=S.lessons||[];
+  const shown=f==='all'?all:all.filter(l=>l.cid===f);
+  const cnt={};CLASS_PROFILES.forEach(c=>{cnt[c.id]=all.filter(l=>l.cid===c.id).length;});
+  el.innerHTML=`
+  <div class="card" style="--ct:linear-gradient(90deg,var(--gold2),var(--gold));">
+    <div class="ctitle">LESSON LOG <em>· ${all.length} total</em></div>
+    <div class="tabs">${[{id:'all',lbl:'All'},...CLASS_PROFILES.map(c=>({id:c.id,lbl:c.emoji+' '+c.nm.split(' ')[0]}))].map(x=>`<button class="tab${f===x.id?' active':''}" onclick="setLF('${x.id}')">${x.lbl}${x.id!=='all'?' ('+cnt[x.id]+')':''}</button>`).join('')}</div>
+    <div class="apanel">
+      <div class="atitle">+ Log Lesson</div>
+      <div class="frow">
+        <select class="fi" id="ll-c">${CLASS_PROFILES.map(c=>`<option value="${c.id}">${c.emoji} ${c.nm}</option>`).join('')}</select>
+        <input class="fi" id="ll-d" type="date" value="${new Date().toISOString().slice(0,10)}" />
+      </div>
+      <input class="fi" id="ll-topic" placeholder="Topic / chapter covered..." style="width:100%;margin-bottom:7px;" />
+      <input class="fi" id="ll-mat" placeholder="Materials / resources used..." style="width:100%;margin-bottom:7px;" />
+      <textarea class="fta" id="ll-ok" placeholder="What went well / they learned..."></textarea>
+      <textarea class="fta" id="ll-gap" placeholder="Gaps / what still needs work..."></textarea>
+      <textarea class="fta" id="ll-meth" placeholder="Method that worked today..."></textarea>
+      <textarea class="fta" id="ll-next" placeholder="Plan for next class..."></textarea>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:7px;"><input type="checkbox" id="ll-imm" style="width:16px;height:16px;"> 🌊 Used full Mandarin immersion</label>
+      <button class="bmain" onclick="addLesson()">+ SAVE LESSON LOG</button>
+    </div>
+    ${shown.length===0?`<div class="empty"><span class="ei">📋</span>No lessons here yet!</div>`
+    :[...shown].reverse().map(l=>{const cls=CLASS_PROFILES.find(c=>c.id===l.cid);
+      return`<div class="lesitm"><div class="leshdr">
+        <div><div class="lestit">${cls?.emoji||'📖'} ${l.topic||'(no topic)'}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;"><span class="tag ty">${cls?.nm||l.cid}</span><span class="tag tgr">${l.date||''}</span>${l.immersion?'<span class="tag tpu">🌊 Immersion</span>':''}</div></div>
+        <button class="dbtn" onclick="delLesson('${l.id}')">✕</button></div>
+        ${l.material?`<div class="leslbl">Materials</div><div style="font-size:11px;color:var(--text2);margin-bottom:3px;">${l.material}</div>`:''}
+        ${l.learned?`<div class="leslbl">Went well</div><div style="font-size:11px;color:var(--text2);margin-bottom:3px;">${l.learned}</div>`:''}
+        ${l.gaps?`<div class="leslbl">Gaps</div><div class="lesgap">${l.gaps}</div>`:''}
+        ${l.method?`<div class="leslbl">Method</div><div class="lesmeth">${l.method}</div>`:''}
+        ${l.next?`<div class="leslbl">Next class</div><div style="font-size:11px;color:var(--text2);font-style:italic;">${l.next}</div>`:''}
+      </div>`;}).join('')}
+  </div>
+  <div class="card" style="--ct:linear-gradient(90deg,var(--pink),var(--accent2));">
+    <div class="ctitle">💡 LESSON IDEAS</div>
+    <button class="bmain" style="background:linear-gradient(135deg,#e84393,var(--pink));margin-bottom:10px;" onclick="genIdea()">🎲 Generate Random Idea</button>
+    <div id="ideas-box">${LESSON_IDEAS.slice(0,3).map(ideaCard).join('')}</div>
+  </div>`;
+}
+
+function ideaCard(idea){return`<div class="lesitm" style="background:linear-gradient(135deg,#f0eeff,#e8e2ff);border-color:var(--accent2);"><span class="tag tpu" style="margin-bottom:5px;display:inline-block;">${idea.tag}</span><div style="font-size:13px;font-weight:800;margin-bottom:4px;">${idea.t}</div><div style="font-size:11px;color:var(--text2);">${idea.b}</div><div class="lesmeth" style="margin-top:5px;">${idea.o.join(' · ')}</div></div>`;}
+
+function genIdea(){
+  const idea=LESSON_IDEAS[Math.floor(Math.random()*LESSON_IDEAS.length)];
+  const box=document.getElementById('ideas-box');if(!box)return;
+  const d=document.createElement('div');d.innerHTML=ideaCard(idea);box.prepend(d.firstChild);showToast('💡 New lesson idea!');
+}
+function setLF(f){S.lessonFilter=f;saveS();renderMain();}
+function quickLog(cid,nm){curNav='lessons';renderNav();renderMain();setTimeout(()=>{const s=document.getElementById('ll-c');if(s)s.value=cid;showToast('📋 Logging for '+nm);},100);}
+function addLesson(){
+  const topic=document.getElementById('ll-topic')?.value.trim();if(!topic){showToast('Add a topic!');return;}
+  const imm=document.getElementById('ll-imm')?.checked;
+  if(!S.lessons)S.lessons=[];
+  S.lessons.push({id:rnd(),cid:document.getElementById('ll-c')?.value,date:document.getElementById('ll-d')?.value||new Date().toLocaleDateString('en-GB'),
+    topic,material:document.getElementById('ll-mat')?.value.trim(),learned:document.getElementById('ll-ok')?.value.trim(),
+    gaps:document.getElementById('ll-gap')?.value.trim(),method:document.getElementById('ll-meth')?.value.trim(),
+    next:document.getElementById('ll-next')?.value.trim(),immersion:imm});
+  if(imm)S.immC=(S.immC||0)+1;
+  S.teachDays=(S.teachDays||0)+1;
+  saveS();evalAch();renderMain();showToast('📋 Lesson logged!');
+}
+function delLesson(id){S.lessons=(S.lessons||[]).filter(l=>l.id!=id);saveS();renderMain();}
+
+// ═══════ RELOCATE ═══════
+function renderRelo(el){
+  if(!S.items)S.items=[];
+  const f=S.itemFilter||'all',shown=f==='all'?S.items:S.items.filter(i=>i.status===f);
+  const c={keep:0,sell:0,donate:0,toss:0};
+  S.items.filter(i=>!i.done).forEach(i=>c[i.status]=(c[i.status]||0)+1);
+  const done=S.items.filter(i=>i.done).length;
+  el.innerHTML=`
+  <div class="card" style="--ct:linear-gradient(90deg,var(--teal),var(--green));">
+    <div class="ctitle">📦 RELOCATION TRACKER</div>
+    <div class="rsumm">
+      <div class="rstat"><div class="rsnum" style="color:var(--green);">${c.keep}</div><div class="rslbl">Bring to Jakarta</div></div>
+      <div class="rstat"><div class="rsnum" style="color:var(--gold);">${c.sell}</div><div class="rslbl">Sell</div></div>
+      <div class="rstat"><div class="rsnum" style="color:var(--pink);">${c.donate}</div><div class="rslbl">Give Away</div></div>
+    </div>
+    ${done>0?`<div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:8px;">✓ ${done} items sorted!</div>`:''}
+    <div class="apanel">
+      <div class="atitle">+ Add Item</div>
+      <div class="frow"><input class="fi" id="ri-n" placeholder="Item name (e.g. grandma's plates, old blazer)..." /></div>
+      <div class="frow">
+        <select class="fi" id="ri-c"><option>Clothing</option><option>Kitchen / Cookware</option><option>Plates & Utensils</option><option>Furniture</option><option>Books</option><option>Electronics</option><option>Other</option></select>
+        <select class="fi" id="ri-s"><option value="keep">🟢 Keep (Jakarta)</option><option value="sell">🟡 Sell</option><option value="donate">🩷 Give Away</option><option value="toss">⚫ Toss</option></select>
+      </div>
+      <input class="fi" id="ri-note" placeholder="Notes (price, who to give to)..." style="width:100%;margin-bottom:7px;" />
+      <button class="bmain" style="background:linear-gradient(135deg,var(--teal),var(--green));" onclick="addItem()">+ ADD ITEM</button>
+    </div>
+    <div class="tabs">${['all','keep','sell','donate','toss'].map(x=>`<button class="tab${f===x?' active':''}" onclick="setIF('${x}')">${x[0].toUpperCase()+x.slice(1)}</button>`).join('')}</div>
+    ${shown.length===0?`<div class="empty"><span class="ei">📦</span>No items here yet!</div>`
+    :shown.map(i=>`<div class="irow ${i.status}${i.done?' idone':''}">
+      <div class="ichk" onclick="toggleItem('${i.id}')">${i.done?'✓':''}</div>
+      <div style="flex:1;min-width:0;"><div class="inm">${i.nm}</div><div class="icat">${i.cat||''}${i.note?' · '+i.note:''}</div></div>
+      <div style="display:flex;align-items:center;gap:5px;"><span class="sbdg2 s${i.status[0]}2">${i.status}</span><button class="dbtn" onclick="delItem('${i.id}')">✕</button></div>
+    </div>`).join('')}
+    ${done>0?`<button class="bsm" style="margin-top:8px;" onclick="clearDone()">🗑 Clear ${done} done</button>`:''}
+  </div>
+  <div style="background:linear-gradient(135deg,#fff8e1,#fff3e0);border:1.5px solid rgba(249,168,37,.3);border-radius:12px;padding:12px;margin-bottom:10px;">
+    <div style="font-size:9px;font-weight:900;color:var(--gold2);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">💡 Grandma's Kitchen Guide</div>
+    ${['Sort plates: cracked = toss, good = sell or give away','Large cookware: sell to neighbors or Marketplace','Sentimental pieces: keep max 1-2 that truly matter','Set deadline: everything labeled by end of month','Once in Jakarta, delete this whole list — you\'re free! 🌟'].map(r=>`<div style="display:flex;gap:6px;font-size:11px;color:#795548;margin-bottom:3px;"><span>▸</span><span>${r}</span></div>`).join('')}
+  </div>`;
+}
+
+function setIF(f){S.itemFilter=f;saveS();renderMain();}
+function addItem(){
+  const nm=document.getElementById('ri-n')?.value.trim();if(!nm){showToast('Add item name!');return;}
+  if(!S.items)S.items=[];
+  S.items.push({id:rnd(),nm,cat:document.getElementById('ri-c')?.value,status:document.getElementById('ri-s')?.value||'keep',note:document.getElementById('ri-note')?.value.trim(),done:false});
+  saveS();evalAch();renderMain();showToast('📦 Item added!');
+}
+function toggleItem(id){const i=S.items.find(x=>x.id==id);if(i){i.done=!i.done;saveS();evalAch();renderMain();}}
+function delItem(id){S.items=S.items.filter(i=>i.id!=id);saveS();renderMain();}
+function clearDone(){S.items=S.items.filter(i=>!i.done);saveS();renderMain();showToast('Done items cleared!');}
+
+// ═══════ JOBS ═══════
+function renderJobs(el){
+  if(!S.jobs)S.jobs=[];
+  const f=S.jobFilter||'all',shown=f==='all'?S.jobs:S.jobs.filter(j=>j.status===f);
+  const c={wishlist:0,applied:0,interview:0,offer:0,rejected:0};
+  S.jobs.forEach(j=>c[j.status]=(c[j.status]||0)+1);
+  el.innerHTML=`
+  <div class="card" style="--ct:linear-gradient(90deg,var(--sky),var(--accent));">
+    <div class="ctitle">💼 JAKARTA JOB HUNT</div>
+    <div class="rsumm">
+      <div class="rstat"><div class="rsnum" style="color:var(--sky);">${c.applied}</div><div class="rslbl">Applied</div></div>
+      <div class="rstat"><div class="rsnum" style="color:var(--gold);">${c.interview}</div><div class="rslbl">Interview</div></div>
+      <div class="rstat"><div class="rsnum" style="color:var(--green);">${c.offer}</div><div class="rslbl">Offer 🎉</div></div>
+    </div>
+    <div class="apanel">
+      <div class="atitle">+ Add Application</div>
+      <div class="frow"><input class="fi" id="jj-c" placeholder="Company name..." /><input class="fi" id="jj-r" placeholder="Role / position..." /></div>
+      <div class="frow">
+        <select class="fi" id="jj-s"><option value="wishlist">💜 Wishlist</option><option value="applied">🔵 Applied</option><option value="interview">🟡 Interview</option><option value="offer">🟢 Offer</option><option value="rejected">🔴 Rejected</option></select>
+        <input class="fi" id="jj-d" type="date" value="${new Date().toISOString().slice(0,10)}" />
+      </div>
+      <input class="fi" id="jj-l" placeholder="Job link or source..." style="width:100%;margin-bottom:7px;" />
+      <textarea class="fta" id="jj-n" placeholder="Notes: why this company, prep needed, follow-up..."></textarea>
+      <button class="bmain" onclick="addJob()">+ ADD APPLICATION</button>
+    </div>
+    <div class="tabs">${['all','wishlist','applied','interview','offer','rejected'].map(x=>`<button class="tab${f===x?' active':''}" style="font-size:9px;" onclick="setJF('${x}')">${x[0].toUpperCase()+x.slice(1)}</button>`).join('')}</div>
+    ${shown.length===0?`<div class="empty"><span class="ei">💼</span>No applications yet!</div>`
+    :shown.map(j=>`<div class="jcard">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div><div class="jco">${j.company}</div><div class="jrl">${j.role||'—'}</div></div>
+        <div style="display:flex;align-items:center;gap:5px;"><span class="jst j${j.status[0]}">${j.status}</span><button class="dbtn" onclick="delJob('${j.id}')">✕</button></div>
+      </div>
+      ${j.link?`<div style="font-size:10px;color:var(--sky);font-weight:700;margin-bottom:4px;">🔗 ${j.link}</div>`:''}
+      ${j.notes?`<div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:4px;">${j.notes}</div>`:''}
+      <div style="font-size:9px;color:var(--text3);font-weight:700;">📅 ${j.date}</div>
+      <div class="frow" style="margin-top:8px;">
+        <select class="fi" id="js-${j.id}">${['wishlist','applied','interview','offer','rejected'].map(x=>`<option value="${x}"${j.status===x?' selected':''}>${x}</option>`).join('')}</select>
+        <button class="bsm" onclick="updJob('${j.id}')">Update</button>
+      </div>
+    </div>`).join('')}
+  </div>
+  <div class="cvtip">
+    <div class="cvtitle">✨ CV Tips for Mandarin Staff</div>
+    <div class="cvitem">Write "Mandarin Tutor (self-employed)" as latest job with duration + student count</div>
+    <div class="cvitem">Mention: private class, group class, business Mandarin, own curriculum design</div>
+    <div class="cvitem">Skills: Mandarin (native/near-native), teaching, content creation, PPT design</div>
+    <div class="cvitem">Highlight immersion teaching approach — shows you're methodology-aware</div>
+    <div class="cvitem">Tarot/Bazi: include if applying to Chinese-culture companies</div>
+    <div class="cvitem">Cover letter: show you adapt to learner needs, not one-size-fits-all</div>
+  </div>`;
+}
+
+function setJF(f){S.jobFilter=f;saveS();renderMain();}
+function addJob(){
+  const c=document.getElementById('jj-c')?.value.trim();if(!c){showToast('Add company name!');return;}
+  if(!S.jobs)S.jobs=[];
+  S.jobs.push({id:rnd(),company:c,role:document.getElementById('jj-r')?.value.trim(),status:document.getElementById('jj-s')?.value||'applied',
+    date:document.getElementById('jj-d')?.value,link:document.getElementById('jj-l')?.value.trim(),notes:document.getElementById('jj-n')?.value.trim()});
+  saveS();evalAch();renderMain();showToast('💼 Application added!');
+}
+function updJob(id){const j=S.jobs.find(x=>x.id==id);const v=document.getElementById('js-'+id)?.value;if(j&&v){j.status=v;saveS();evalAch();renderMain();showToast('Status updated!');}}
+function delJob(id){S.jobs=S.jobs.filter(j=>j.id!=id);saveS();renderMain();}
+
+// ═══════ QUEST ACTIONS ═══════
+function addQuest(type){
+  const nm=document.getElementById('qn')?.value.trim();if(!nm)return;
+  const sk=document.getElementById('qs')?.value,xp=parseInt(document.getElementById('qx')?.value||10);
+  S.quests.push({id:rnd(),nm,type,sk,xp,role:CR.id,done:false,lastDone:null,surprise:false});
+  saveS();renderMain();
+}
+
+function toggleQ(id){
+  const q=S.quests.find(x=>x.id==id);if(!q||isDone(q))return;
+  const prev=lvFx(S.totalXp);
+  if(q.type==='daily'||q.type==='habit')q.lastDone=today();else q.done=true;
+  S.totalXp+=q.xp;
+  const isSk=SENSEI_SKILLS.find(s=>s.id===q.sk);
+  if(isSk){if(!S.sskills[q.sk])S.sskills[q.sk]={xp:0};S.sskills[q.sk].xp+=q.xp;}
+  else{if(!S.skills[q.sk])S.skills[q.sk]={xp:0};S.skills[q.sk].xp+=q.xp;}
+  S.doneToday=(S.doneToday||0)+1;
+  const sk=skById(q.sk);
+  // Daily tracker: increment cumulative count
+  if(q.type==='daily'&&q.catalogId&&DAILY_TRACKER[q.catalogId]){
+    if(!S.dailyCounts)S.dailyCounts={};
+    const cfg=DAILY_TRACKER[q.catalogId];
+    const inc=cfg.unit==='min'?30:1; // guitar = 30 min, others = 1 day
+    S.dailyCounts[q.catalogId]=(S.dailyCounts[q.catalogId]||0)+inc;
+  }
+  // Only add to log for non-daily quests
+  if(q.type!=='daily'){
+    S.log.push({nm:q.nm,type:q.type,sk:sk.nm,ico:sk.ico,xp:q.xp,sur:q.surprise||false,catalogId:q.catalogId||null,
+      time:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})});
+  }
+  chkStreak();saveS();evalAch();syncCatalogQuests();
+  const newLv=lvFx(S.totalXp);renderAll();
+  if(newLv>prev)showLvlUp(newLv);else showToast(`${sk.ico} +${q.xp} XP · ${sk.nm}!`);
+}
+
+function delQ(id){S.quests=S.quests.filter(q=>q.id!=id);saveS();renderMain();}
+function confirmDelQ(id,nm){
+  if(window.confirm(`Delete quest:\n"${nm}"\n\nThis cannot be undone.`)){delQ(id);}
+}
+
+function trainSkill(){
+  const isSn=CR.id==='teacher',id=document.getElementById('tsk')?.value,xp=parseInt(document.getElementById('txp')?.value||10);
+  const prev=lvFx(S.totalXp);
+  if(isSn){if(!S.sskills[id])S.sskills[id]={xp:0};S.sskills[id].xp+=xp;
+    if(document.getElementById('tppt')?.checked)S.pptMade=(S.pptMade||0)+1;
+    if(document.getElementById('tpromo')?.checked)S.promoPosted=(S.promoPosted||0)+1;}
+  else{if(!S.skills[id])S.skills[id]={xp:0};S.skills[id].xp+=xp;}
+  S.totalXp+=xp;saveS();evalAch();
+  const newLv=lvFx(S.totalXp),sk=skById(id);renderAll();
+  if(newLv>prev)showLvlUp(newLv);else showToast(`${sk.ico} +${xp} XP · ${sk.nm}!`);
+}
+
+function rollSurprise(){
+  const sq=SURPRISE_QUESTS[Math.floor(Math.random()*SURPRISE_QUESTS.length)];
+  if(S.quests.find(q=>q.nm===sq.nm&&!isDone(q))){showToast('Already have this!');return;}
+  S.quests.push({id:rnd(),nm:sq.nm,type:'quest',sk:sq.sk,xp:sq.xp,role:'rui',done:false,lastDone:null,surprise:true});
+  saveS();renderMain();showToast('🎲 Surprise quest added!');
+}
+
+function addOrbs(n){S.orbs=Math.min((S.orbs||0)+n,S.orbGoal);if(S.orbs>=S.orbGoal){S.orbFills=(S.orbFills||0)+1;saveS();evalAch();showToast('🎉 Bowl full! Gift your viewers!');renderMain();}else{saveS();renderMain();}}
+function resetOrbs(){S.orbs=0;saveS();renderMain();showToast('New bowl starts! 🌊');}
+function addSavings(){const v=parseInt(document.getElementById('sav-in')?.value||0);if(!v||v<=0)return;S.savings=Math.min((S.savings||0)+v,S.savingsGoal);saveS();evalAch();showToast(`💚 Saved ${fmtRp(v)} · ${Math.round(S.savings/S.savingsGoal*100)}% to L2D!`);renderMain();}
+function addStream(){const t=document.getElementById('st-t')?.value.trim();if(!t)return;if(!S.streams)S.streams=[];S.streams.push({id:rnd(),title:t,views:parseInt(document.getElementById('st-v')?.value||0),note:document.getElementById('st-n')?.value.trim(),date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})});saveS();evalAch();renderMain();showToast('📺 Stream logged!');}
+function delStream(id){S.streams=S.streams.filter(s=>s.id!=id);saveS();renderMain();}
+
+function showLvlUp(lv){
+  const r=LVR.find(x=>x.lv===lv);
+  document.getElementById('m-spr').textContent=CR.spr;
+  document.getElementById('m-ttl').textContent='✦ LEVEL UP ✦';
+  document.getElementById('m-sub').textContent=`Level ${lv} — ${titleFor(lv)}!`;
+  document.getElementById('m-rwd').textContent=r?r.t:`Keep going, ${CR.nm}! ✨`;
+  document.getElementById('m-aff').textContent=AFFS[Math.floor(Math.random()*AFFS.length)];
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+function undoQ(id){
+  const q=S.quests.find(x=>x.id==id);if(!q)return;
+  // Undo XP
+  S.totalXp=Math.max(0,S.totalXp-q.xp);
+  const isSk=SENSEI_SKILLS.find(s=>s.id===q.sk);
+  if(isSk){if(S.sskills[q.sk])S.sskills[q.sk].xp=Math.max(0,(S.sskills[q.sk].xp||0)-q.xp);}
+  else{if(S.skills[q.sk])S.skills[q.sk].xp=Math.max(0,(S.skills[q.sk].xp||0)-q.xp);}
+  S.doneToday=Math.max(0,(S.doneToday||0)-1);
+  // Undo completion
+  if(q.type==='daily'||q.type==='habit')q.lastDone=null;else q.done=false;
+  // Remove last log entry for this quest
+  const li=S.log.map((l,i)=>l.nm===q.nm?i:-1).filter(i=>i>=0);
+  if(li.length)S.log.splice(li[li.length-1],1);
+  saveS();renderAll();showToast(`↩ Undone: ${q.nm.slice(0,30)}`);
+}
+
+// ═══════ MYSTIC HUB ═══════
+const TAROT_DECK=[
+  // Major Arcana
+  {id:'t00',nm:'The Fool',       num:'0',  suit:'Major',el:'Air',    key:'New beginnings, innocence, spontaneity',
+   up:'New start, leap of faith, freedom, innocence',rev:'Recklessness, risk, being naive',
+   love:'New romance, playfulness, open heart',career:'New job, fresh start, taking a risk',
+   finance:'Be careful with impulsive spending',spiritual:'Beginning a new spiritual path',feeling:'Excitement, wonder',action:'Take the leap — but check the ground first'},
+  {id:'t01',nm:'The Magician',   num:'I',  suit:'Major',el:'Air/Fire',key:'Willpower, skill, manifestation',
+   up:'Manifestation, resourcefulness, skill, concentration',rev:'Manipulation, poor planning, trickery',
+   love:'Charm, attraction, making things happen',career:'Using full skill set, confidence',
+   finance:'Good timing for investments',spiritual:'Channeling energy purposefully',feeling:'Power, capability',action:'Use every tool you have — act now'},
+  {id:'t02',nm:'High Priestess', num:'II', suit:'Major',el:'Water',  key:'Intuition, mystery, inner knowing',
+   up:'Intuition, sacred knowledge, divine feminine, subconscious',rev:'Secrets, withdrawal, silence',
+   love:'Waiting, mystery, hidden feelings',career:'Trust your gut, patience needed',
+   finance:'Not all info is visible yet — wait',spiritual:'Deep connection to inner self',feeling:'Calm knowing',action:'Look inward before acting'},
+  {id:'t03',nm:'The Empress',    num:'III',suit:'Major',el:'Earth',  key:'Fertility, nurturing, abundance',
+   up:'Femininity, beauty, nature, nurturing, abundance',rev:'Creative block, dependence, smothering',
+   love:'Sensuality, fertility, deep love',career:'Creative projects, growth',
+   finance:'Abundance, material comfort',spiritual:'Connection to nature and body',feeling:'Warmth, abundance',action:'Nurture what you\'ve planted'},
+  {id:'t04',nm:'The Emperor',    num:'IV', suit:'Major',el:'Fire',   key:'Authority, structure, control',
+   up:'Authority, structure, solid foundation, control',rev:'Domination, rigidity, excessive control',
+   love:'Stability, protection, sometimes control issues',career:'Leadership, discipline, achievement',
+   finance:'Solid financial planning, control',spiritual:'Grounding spiritual practice',feeling:'Confidence, control',action:'Build structure — create the plan'},
+  {id:'t05',nm:'The Hierophant', num:'V',  suit:'Major',el:'Earth',  key:'Tradition, conformity, spiritual wisdom',
+   up:'Tradition, conformity, morality, ethics, spiritual wisdom',rev:'Personal beliefs, freedom, challenging tradition',
+   love:'Commitment, traditional values, marriage',career:'Conventional path, mentorship',
+   finance:'Traditional approach, follow established methods',spiritual:'Religious institution, teacher',feeling:'Belonging, guidance',action:'Seek a mentor or follow a proven path'},
+  {id:'t06',nm:'The Lovers',     num:'VI', suit:'Major',el:'Air',    key:'Love, harmony, choices',
+   up:'Love, harmony, relationships, values alignment, choices',rev:'Disharmony, imbalance, bad choices',
+   love:'Deep connection, soulmate energy, major choice',career:'Partnership, values-aligned work',
+   finance:'Financial decision with ethical weight',spiritual:'Union of opposites, inner harmony',feeling:'Love, alignment',action:'Choose with your heart AND your values'},
+  {id:'t07',nm:'The Chariot',    num:'VII',suit:'Major',el:'Water',  key:'Control, willpower, victory',
+   up:'Control, willpower, victory, assertion, determination',rev:'Lack of control, aggression, blocked',
+   love:'Taking charge, forward movement in love',career:'Ambition, overcoming obstacles',
+   finance:'Disciplined effort leads to success',spiritual:'Harnessing inner forces',feeling:'Drive, determination',action:'Push forward — you have the strength'},
+  {id:'t08',nm:'Strength',       num:'VIII',suit:'Major',el:'Fire',  key:'Courage, persuasion, influence, compassion',
+   up:'Strength, courage, patience, control, compassion',rev:'Inner weakness, self-doubt, low energy',
+   love:'Patience in love, gentle strength',career:'Quiet leadership, endurance',
+   finance:'Steady long-term approach',spiritual:'Taming the ego with compassion',feeling:'Quiet confidence',action:'Lead with gentleness not force'},
+  {id:'t09',nm:'The Hermit',     num:'IX', suit:'Major',el:'Earth',  key:'Solitude, soul-searching, inner guidance',
+   up:'Soul searching, introspection, inner guidance, solitude',rev:'Isolation, loneliness, withdrawal',
+   love:'Need for space, self-reflection before love',career:'Solitary work, expert in field',
+   finance:'Careful, thoughtful financial decisions',spiritual:'Deep spiritual introspection',feeling:'Quiet, contemplative',action:'Step back and find your own answers'},
+  {id:'t10',nm:'Wheel of Fortune',num:'X', suit:'Major',el:'Fire',   key:'Change, cycles, fate, turning point',
+   up:'Good luck, karma, life cycles, destiny, turning point',rev:'Bad luck, resistance to change, breaking cycles',
+   love:'Fated encounter, change in relationship',career:'Opportunity turning point',
+   finance:'Financial cycle turning — watch timing',spiritual:'Karma, cosmic cycles',feeling:'Hope, change',action:'Go with the flow — timing is everything'},
+  {id:'t11',nm:'Justice',        num:'XI', suit:'Major',el:'Air',    key:'Justice, fairness, truth, cause and effect',
+   up:'Justice, fairness, truth, cause and effect, law',rev:'Unfairness, lack of accountability, dishonesty',
+   love:'Balanced partnership, honest communication',career:'Legal matters, fair outcome',
+   finance:'Financial accountability, balanced books',spiritual:'Karmic justice, ethical living',feeling:'Clarity, fairness',action:'Make the decision that is right, not just easy'},
+  {id:'t12',nm:'The Hanged Man', num:'XII',suit:'Major',el:'Water',  key:'Pause, surrender, letting go, new perspectives',
+   up:'Suspension, restriction, letting go, sacrifice',rev:'Delay, resistance, stalling',
+   love:'Pause in relationship, seeing things differently',career:'Waiting period, gaining new perspective',
+   finance:'Hold off on major decisions',spiritual:'Surrender to a higher will',feeling:'Stillness, acceptance',action:'Do nothing — pause is the action'},
+  {id:'t13',nm:'Death',          num:'XIII',suit:'Major',el:'Water', key:'Endings, change, transformation, transition',
+   up:'Endings, change, transformation, passage, transition',rev:'Resistance to change, stagnation, inability to move on',
+   love:'Major change, ending of one phase',career:'Career transformation, end of a chapter',
+   finance:'Financial change — let go of what no longer serves',spiritual:'Soul transformation',feeling:'Release, inevitability',action:'Let go — what ends makes room for what comes'},
+  {id:'t14',nm:'Temperance',     num:'XIV',suit:'Major',el:'Fire',   key:'Balance, moderation, patience, purpose',
+   up:'Balance, moderation, patience, purpose, meaning',rev:'Imbalance, excess, self-healing needed',
+   love:'Harmony, patience, blending well',career:'Balanced approach, long-term vision',
+   finance:'Moderate spending, balanced portfolio',spiritual:'Alchemy, divine flow',feeling:'Peace, flow',action:'Find the middle path — blend, don\'t force'},
+  {id:'t15',nm:'The Devil',      num:'XV', suit:'Major',el:'Earth',  key:'Shadow self, attachment, addiction, restriction',
+   up:'Shadow self, attachment, addiction, restriction, sexuality',rev:'Releasing limiting beliefs, freedom, reclaiming power',
+   love:'Toxic patterns, passion, lust, codependency',career:'Feeling trapped, materialism over purpose',
+   finance:'Financial fear, greed, overspending',spiritual:'Confronting shadow self',feeling:'Trapped, intense',action:'Name what has power over you — then choose differently'},
+  {id:'t16',nm:'The Tower',      num:'XVI',suit:'Major',el:'Fire',   key:'Sudden change, upheaval, chaos, revelation',
+   up:'Sudden change, upheaval, chaos, revelation, awakening',rev:'Fear of change, averting disaster',
+   love:'Sudden breakup or revelation in love',career:'Sudden job loss or restructure',
+   finance:'Financial shock — prepare for unexpected',spiritual:'Ego destruction, awakening',feeling:'Shock, sudden clarity',action:'Brace and rebuild — what falls was not sturdy'},
+  {id:'t17',nm:'The Star',       num:'XVII',suit:'Major',el:'Air',   key:'Hope, faith, rejuvenation',
+   up:'Hope, faith, rejuvenation, serenity, inspiration',rev:'Faithlessness, discouragement, insecurity',
+   love:'Hope restored, healing, vulnerability',career:'Inspiration, long-term hope',
+   finance:'Financial recovery, hopeful signs',spiritual:'Divine guidance, renewed faith',feeling:'Peace, hope',action:'Trust the universe and keep going'},
+  {id:'t18',nm:'The Moon',       num:'XVIII',suit:'Major',el:'Water',key:'Illusion, fear, subconscious, intuition',
+   up:'Illusion, fear, the subconscious, intuition, confusion',rev:'Release of fear, repressed emotion, inner confusion',
+   love:'Hidden feelings, confusion in love, deception possible',career:'Unclear situation, trust your gut',
+   finance:'Not all info visible — wait before deciding',spiritual:'Shadow work, dream messages',feeling:'Uncertainty, deep feeling',action:'Don\'t act yet — gather more information'},
+  {id:'t19',nm:'The Sun',        num:'XIX',suit:'Major',el:'Fire',   key:'Joy, success, positivity, vitality',
+   up:'Positivity, fun, warmth, success, vitality',rev:'Temporary depression, negativity, sadness',
+   love:'Joy, happiness, new love blooming',career:'Success, recognition, confidence',
+   finance:'Financial success, clarity',spiritual:'Enlightenment, childlike faith',feeling:'Joy, radiance',action:'Shine — step forward with confidence'},
+  {id:'t20',nm:'Judgement',      num:'XX', suit:'Major',el:'Fire',   key:'Reflection, reckoning, awakening, absolution',
+   up:'Judgement, rebirth, inner calling, absolution',rev:'Self-doubt, ignoring the call, stagnation',
+   love:'Evaluation of relationship, second chances',career:'Major career reckoning, calling to purpose',
+   finance:'Review financial decisions with honesty',spiritual:'Spiritual awakening, calling',feeling:'Accountability, renewal',action:'Answer the call — your rebirth is ready'},
+  {id:'t21',nm:'The World',      num:'XXI',suit:'Major',el:'Earth',  key:'Completion, integration, accomplishment, travel',
+   up:'Completion, integration, accomplishment, travel',rev:'Incompleteness, no closure, shortcuts',
+   love:'Complete union, fulfillment',career:'Goal achieved, cycle complete',
+   finance:'Financial completion, achievement',spiritual:'Wholeness, cosmic consciousness',feeling:'Fulfillment, wholeness',action:'Celebrate — then begin the next cycle'},
+  // Minor Arcana samples (Wands)
+  {id:'w01',nm:'Ace of Wands',   num:'Ace',suit:'Wands',el:'Fire',   key:'Inspiration, new opportunities, growth, potential',
+   up:'Inspiration, new opportunities, growth, potential',rev:'Lack of energy, delays, missed opportunity',
+   love:'Passionate new attraction',career:'New project, creative spark',
+   finance:'New financial opportunity',spiritual:'Spiritual spark ignited',feeling:'Excitement, possibility',action:'Start — the energy is here now'},
+  {id:'w05',nm:'Five of Wands',  num:'5',  suit:'Wands',el:'Fire',   key:'Conflict, competition, tension, diversity',
+   up:'Conflict, disagreements, competition, tension',rev:'Avoiding conflict, respecting differences',
+   love:'Arguments, playful competition',career:'Competition, differing opinions',
+   finance:'Competing financial pressures',spiritual:'Inner conflict about beliefs',feeling:'Restless, challenged',action:'Engage — healthy conflict leads to better outcomes'},
+  {id:'w10',nm:'Ten of Wands',   num:'10', suit:'Wands',el:'Fire',   key:'Burden, extra responsibility, hard work',
+   up:'Burden, extra responsibility, hard work, achievement',rev:'Doing it all alone, collapse, delegation needed',
+   love:'Relationship burden, over-giving',career:'Overloaded, burnout risk',
+   finance:'Financial pressure, too many obligations',spiritual:'Carrying too much — release is spiritual',feeling:'Exhausted but almost there',action:'Delegate or put something down — you can\'t carry it all'},
+  // Cups samples
+  {id:'c01',nm:'Ace of Cups',    num:'Ace',suit:'Cups',el:'Water',   key:'New love, compassion, creativity, overwhelming emotion',
+   up:'New love, compassion, creativity, overwhelming emotion',rev:'Blocked emotion, emptiness',
+   love:'New love, emotional new beginning',career:'Creative opportunity, passion project',
+   finance:'Emotional satisfaction over financial',spiritual:'Spiritual connection, love from universe',feeling:'Overflowing love',action:'Open your heart — the cup is full, offer it'},
+  {id:'c09',nm:'Nine of Cups',   num:'9',  suit:'Cups',el:'Water',   key:'Contentment, satisfaction, gratitude, wish fulfilled',
+   up:'Contentment, satisfaction, gratitude, wish fulfilled',rev:'Inner happiness needed, dissatisfaction',
+   love:'Happy in love, emotional satisfaction',career:'Career satisfaction, pride',
+   finance:'Financial wishes coming true',spiritual:'Gratitude practice',feeling:'Satisfaction, pleasure',action:'Enjoy what you have — savor it'},
+  // Swords samples
+  {id:'s01',nm:'Ace of Swords',  num:'Ace',suit:'Swords',el:'Air',   key:'Breakthrough, clarity, sharp mind, new idea',
+   up:'Breakthrough, clarity, sharp mind, new idea',rev:'Confusion, brutality, chaos',
+   love:'Clarity in love, cutting through illusion',career:'New idea, intellectual breakthrough',
+   finance:'Clear financial decision, cutting losses',spiritual:'Mental clarity, truth',feeling:'Sharp, decisive',action:'Cut to the truth — speak or decide clearly'},
+  {id:'s09',nm:'Nine of Swords', num:'9',  suit:'Swords',el:'Air',   key:'Anxiety, worry, fear, nightmares',
+   up:'Anxiety, worry, fear, nightmares, despair',rev:'Inner turmoil, releasing worry',
+   love:'Anxiety in love, fear of rejection',career:'Work anxiety, fear of failure',
+   finance:'Financial worry at night',spiritual:'Dark night of the soul',feeling:'Dread, overwhelm',action:'Write your fears down — then ask: which of these are actually true?'},
+  // Pentacles samples
+  {id:'p01',nm:'Ace of Pentacles',num:'Ace',suit:'Pentacles',el:'Earth',key:'New opportunity, manifestation, abundance',
+   up:'New opportunity, manifestation, abundance',rev:'Lost opportunity, lack of planning',
+   love:'Stable new relationship, grounded love',career:'New job, business opportunity, investment',
+   finance:'Financial new beginning, seed money',spiritual:'Earthly blessings, grounded spiritual path',feeling:'Secure, hopeful',action:'Plant the seed — this is the start of something real'},
+  {id:'p10',nm:'Ten of Pentacles',num:'10',suit:'Pentacles',el:'Earth',key:'Wealth, financial security, family, long-term success',
+   up:'Wealth, financial security, family, long-term success',rev:'Financial failure, loneliness, loss',
+   love:'Long-term commitment, family, legacy love',career:'Career peak, establishment, lasting success',
+   finance:'Generational wealth, financial security achieved',spiritual:'Earthly fulfillment, legacy',feeling:'Complete, secure',action:'Think long term — build something that lasts'},
+];
+
+function renderMystic(el){
+  const mTab=window.mysticTab||'tarot';
+  el.innerHTML=`
+  <div style="background:linear-gradient(135deg,#1a0a2e,#2d1b69);border:2px solid #7c3aed;border-radius:16px;padding:14px;margin-bottom:10px;">
+    <div style="font-family:'Cinzel Decorative',serif;font-size:13px;color:#c4b5fd;margin-bottom:4px;">🔮 Mystic · Bazi & Tarot</div>
+    <div style="color:rgba(255,255,255,.7);font-size:11px;line-height:1.7;">Bazi advance reader in progress. Goal: storytelling without translating — feel the chart, speak the story. Trust the symbols.</div>
+  </div>
+  <div class="tabs">${[['tarot','🃏 Tarot Study'],['journal','📓 Journal'],['clients','📅 Clients'],['bazi','☯ Bazi Notes']].map(([id,lbl])=>`<button class="tab${mTab===id?' active':''}" onclick="setMTab('${id}')">${lbl}</button>`).join('')}</div>
+  <div id="mystic-body"></div>`;
+  renderMysticBody();
+}
+
+function setMTab(t){window.mysticTab=t;renderMain();}
+
+function renderMysticBody(){
+  const el=document.getElementById('mystic-body');if(!el)return;
+  const t=window.mysticTab||'tarot';
+  if(t==='tarot')    renderTarotStudy(el);
+  else if(t==='journal') renderMysticJournal(el);
+  else if(t==='clients') renderClients(el);
+  else if(t==='bazi')    renderBaziNotes(el);
+}
+
+function renderTarotStudy(el){
+  if(!S.tarotStudied)S.tarotStudied={};
+  if(!S.tarotFilter)S.tarotFilter='all';
+  const suitsAll=['all','Major','Wands','Cups','Swords','Pentacles'];
+  const shown=S.tarotFilter==='all'?TAROT_DECK:TAROT_DECK.filter(c=>c.suit===S.tarotFilter);
+  const studied=Object.keys(S.tarotStudied).length;
+  el.innerHTML=`
+  <div class="card" style="--ct:linear-gradient(90deg,#7c3aed,#a78bfa);">
+    <div class="ctitle">TAROT LIBRARY <em>· ${studied}/${TAROT_DECK.length} studied</em></div>
+    <div class="btrack" style="margin-bottom:10px;height:8px;"><div class="bfill" style="width:${Math.round(studied/TAROT_DECK.length*100)}%;background:linear-gradient(90deg,#7c3aed,#c4b5fd);"></div></div>
+    <div class="afrow">${suitsAll.map(s=>`<button class="afbtn${S.tarotFilter===s?' active':''}" onclick="setTF('${s}')">${s}</button>`).join('')}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${shown.map(card=>{
+        const done=!!S.tarotStudied[card.id];
+        return`<div style="background:${done?'linear-gradient(135deg,#1e1b4b,#2e1065)':'var(--panel2)'};border:2px solid ${done?'#7c3aed':'var(--border)'};border-radius:12px;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;" onclick="toggleTarotCard('${card.id}')">
+            <div style="width:28px;height:28px;border-radius:50%;background:${done?'#7c3aed':'var(--bg2)'};border:2px solid ${done?'#a78bfa':'var(--border2)'};display:flex;align-items:center;justify-content:center;font-size:12px;color:${done?'white':'var(--text3)'};flex-shrink:0;">${done?'✓':'○'}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:${done?'#c4b5fd':'var(--text)'};">${card.num} · ${card.nm}</div>
+              <div style="font-size:10px;color:${done?'#a78bfa':'var(--text3)'};margin-top:1px;">${card.suit} · ${card.el} · ${card.key}</div>
+            </div>
+            <div style="font-size:10px;color:${done?'#a78bfa':'var(--text3)'};font-weight:700;">${done?'✓ Studied':'▼'}</div>
+          </div>
+          <div id="tcard-${card.id}" style="display:none;padding:0 12px 12px;border-top:1px solid rgba(124,58,237,.2);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+              ${[['🌟 Upright',card.up,'#4ade80'],['🔄 Reversed',card.rev,'#f87171'],['❤️ Love',card.love,'#f472b6'],['💼 Career',card.career,'#60a5fa'],['💰 Finance',card.finance,'#fbbf24'],['✨ Spiritual',card.spiritual,'#a78bfa'],['🌊 Element',card.el,'#67e8f9'],['💭 Feeling',card.feeling,'#e879f9'],['⚡ Action',card.action,'#fb923c']].map(([lbl,val,clr])=>`
+              <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:8px;">
+                <div style="font-size:9px;font-weight:900;color:${clr};letter-spacing:1px;margin-bottom:3px;">${lbl}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.8);line-height:1.5;">${val||'—'}</div>
+              </div>`).join('')}
+            </div>
+            <div style="margin-top:10px;">
+              <div style="font-size:9px;font-weight:900;color:#a78bfa;letter-spacing:1px;margin-bottom:4px;">📝 MY NOTES</div>
+              <textarea id="tnote-${card.id}" placeholder="Your personal interpretation, readings where this appeared, what resonated..." style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(124,58,237,.4);border-radius:8px;color:rgba(255,255,255,.85);padding:8px;font-size:11px;font-family:'Nunito',sans-serif;resize:vertical;min-height:60px;">${S.tarotNotes?.[card.id]||''}</textarea>
+              <button onclick="saveTarotNote('${card.id}')" style="margin-top:5px;padding:5px 14px;background:#7c3aed;color:white;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Save Note</button>
+            </div>
+          </div>
+        </div>`;}).join('')}
+    </div>
+  </div>`;
+}
+
+function toggleTarotCard(id){
+  const el=document.getElementById('tcard-'+id);if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+function toggleTarotStudied(id){
+  if(!S.tarotStudied)S.tarotStudied={};
+  if(S.tarotStudied[id])delete S.tarotStudied[id];
+  else S.tarotStudied[id]=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+  saveS();renderMain();
+}
+function markStudied(id){
+  if(!S.tarotStudied)S.tarotStudied={};
+  if(S.tarotStudied[id]){delete S.tarotStudied[id];showToast('Unmarked');}
+  else{S.tarotStudied[id]=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short'});showToast('✓ Marked as studied!');}
+  saveS();renderMain();
+}
+function saveTarotNote(id){
+  if(!S.tarotNotes)S.tarotNotes={};
+  const ta=document.getElementById('tnote-'+id);
+  if(ta){S.tarotNotes[id]=ta.value;saveS();showToast('Note saved 🔮');}
+}
+function setTF(f){S.tarotFilter=f;saveS();renderMain();}
+
+function renderMysticJournal(el){
+  if(!S.mysticJournal)S.mysticJournal=[];
+  el.innerHTML=`
+  <div class="card" style="--ct:linear-gradient(90deg,#7c3aed,#db2777);">
+    <div class="ctitle">MYSTIC JOURNAL <em>· ${S.mysticJournal.length} entries</em></div>
+    <div class="apanel">
+      <div class="atitle">+ New Entry</div>
+      <div class="frow">
+        <input class="fi" id="mj-date" type="date" value="${new Date().toISOString().slice(0,10)}" />
+        <select class="fi" id="mj-type">
+          <option value="tarot">🃏 Tarot Pull</option>
+          <option value="bazi">☯ Bazi Study</option>
+          <option value="reading">🔮 Client Reading</option>
+          <option value="dream">🌙 Dream / Symbol</option>
+          <option value="reflection">✨ Spiritual Reflection</option>
+        </select>
+      </div>
+      <input class="fi" id="mj-title" placeholder="Title (e.g. Today's 3-card pull, Chart study..." style="width:100%;margin-bottom:7px;" />
+      <textarea class="fta" id="mj-cards" placeholder="Cards drawn / chart elements / symbols..."></textarea>
+      <textarea class="fta" id="mj-feeling" placeholder="What did you feel / sense intuitively..."></textarea>
+      <textarea class="fta" id="mj-interp" placeholder="Your interpretation and what resonated..."></textarea>
+      <textarea class="fta" id="mj-action" placeholder="Action or insight to carry forward..."></textarea>
+      <button class="bmain" style="background:linear-gradient(135deg,#7c3aed,#db2777);" onclick="addMysticJournal()">+ SAVE ENTRY</button>
+    </div>
+    ${S.mysticJournal.length===0?`<div class="empty"><span class="ei">🔮</span>No journal entries yet!</div>`
+    :[...S.mysticJournal].reverse().map(j=>`
+      <div style="background:linear-gradient(135deg,#1e1b4b,#2e1065);border:1.5px solid #7c3aed;border-radius:12px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <div>
+            <div style="font-size:13px;font-weight:800;color:#c4b5fd;">${j.title||'Entry'}</div>
+            <div style="font-size:10px;color:#a78bfa;margin-top:1px;">${j.type} · ${j.date}</div>
+          </div>
+          <button class="dbtn" style="color:#a78bfa;" onclick="delMysticJournal('${j.id}')">✕</button>
+        </div>
+        ${j.cards?`<div style="font-size:10px;font-weight:900;color:#a78bfa;letter-spacing:1px;margin-bottom:2px;">CARDS / SYMBOLS</div><div style="font-size:11px;color:rgba(255,255,255,.75);background:rgba(0,0,0,.2);padding:6px 9px;border-radius:6px;margin-bottom:6px;">${j.cards}</div>`:''}
+        ${j.feeling?`<div style="font-size:10px;font-weight:900;color:#f472b6;letter-spacing:1px;margin-bottom:2px;">INTUITION</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-bottom:6px;">${j.feeling}</div>`:''}
+        ${j.interp?`<div style="font-size:10px;font-weight:900;color:#60a5fa;letter-spacing:1px;margin-bottom:2px;">INTERPRETATION</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-bottom:6px;">${j.interp}</div>`:''}
+        ${j.action?`<div style="font-size:10px;font-weight:900;color:#4ade80;letter-spacing:1px;margin-bottom:2px;">ACTION / INSIGHT</div><div style="font-size:11px;color:rgba(255,255,255,.75);">${j.action}</div>`:''}
+      </div>`).join('')}
+  </div>`;
+}
+
+function addMysticJournal(){
+  const title=document.getElementById('mj-title')?.value.trim();
+  if(!title){showToast('Add a title!');return;}
+  if(!S.mysticJournal)S.mysticJournal=[];
+  S.mysticJournal.push({id:rnd(),date:document.getElementById('mj-date')?.value,type:document.getElementById('mj-type')?.value,title,
+    cards:document.getElementById('mj-cards')?.value.trim(),feeling:document.getElementById('mj-feeling')?.value.trim(),
+    interp:document.getElementById('mj-interp')?.value.trim(),action:document.getElementById('mj-action')?.value.trim()});
+  saveS();renderMain();showToast('🔮 Journal entry saved!');
+}
+function delMysticJournal(id){S.mysticJournal=(S.mysticJournal||[]).filter(j=>j.id!=id);saveS();renderMain();}
+
+function renderClients(el){
+  if(!S.readings)S.readings=[];
+  el.innerHTML=`
+  <div class="card" style="--ct:linear-gradient(90deg,#db2777,#7c3aed);">
+    <div class="ctitle">CLIENT READINGS <em>· ${S.readings.length} sessions</em></div>
+    <div class="apanel">
+      <div class="atitle">+ Schedule Reading</div>
+      <div class="frow">
+        <input class="fi" id="rd-name" placeholder="Client name (or initials)..." />
+        <select class="fi" id="rd-type">
+          <option value="tarot">🃏 Tarot</option>
+          <option value="bazi">☯ Bazi</option>
+          <option value="combined">✨ Tarot + Bazi</option>
+          <option value="follow">🔄 Follow-up</option>
+        </select>
+      </div>
+      <div class="frow">
+        <input class="fi" id="rd-date" type="date" value="${new Date().toISOString().slice(0,10)}" />
+        <input class="fi" id="rd-time" type="time" value="10:00" />
+      </div>
+      <input class="fi" id="rd-platform" placeholder="Platform (Zoom link / WhatsApp / etc)..." style="width:100%;margin-bottom:7px;" />
+      <textarea class="fta" id="rd-prep" placeholder="Pre-session prep notes (for Bazi: chart translated, key elements, story outline)..."></textarea>
+      <textarea class="fta" id="rd-focus" placeholder="Client's main questions / focus areas..."></textarea>
+      <button class="bmain" style="background:linear-gradient(135deg,#db2777,#7c3aed);" onclick="addReading()">+ ADD SESSION</button>
+    </div>
+
+    ${S.readings.length===0?`<div class="empty"><span class="ei">🌙</span>No sessions yet!</div>`
+    :[...S.readings].sort((a,b)=>new Date(a.date+' '+a.time)-new Date(b.date+' '+b.time)).map(r=>{
+      const isPast=new Date(r.date+' '+r.time)<new Date();
+      return`<div style="background:var(--panel2);border:2px solid ${isPast?'var(--border)':'var(--pink)'};border-radius:12px;padding:12px;margin-bottom:8px;${isPast?'opacity:.7':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;">
+          <div>
+            <div style="font-size:13px;font-weight:900;color:var(--text);">${r.name}</div>
+            <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;">
+              <span class="tag tp">${r.type}</span>
+              <span class="tag tgr">📅 ${r.date} ${r.time}</span>
+              ${!isPast?'<span class="tag tp" style="background:linear-gradient(135deg,#fce4ec,#f3e5f5);color:#c2185b;animation:npulse 2s ease-in-out infinite;">⏰ Upcoming</span>':'<span class="tag tgr">✓ Done</span>'}
+            </div>
+          </div>
+          <button class="dbtn" onclick="delReading('${r.id}')">✕</button>
+        </div>
+        ${r.platform?`<div style="font-size:11px;color:var(--sky);font-weight:700;margin-bottom:5px;">🔗 ${r.platform}</div>`:''}
+        ${r.focus?`<div style="font-size:10px;font-weight:900;color:var(--text3);letter-spacing:1px;margin-bottom:2px;">CLIENT FOCUS</div><div style="font-size:11px;color:var(--text2);margin-bottom:6px;">${r.focus}</div>`:''}
+        ${r.prep?`<div style="font-size:10px;font-weight:900;color:var(--accent);letter-spacing:1px;margin-bottom:2px;">PREP NOTES</div><div style="background:var(--bg2);border-left:3px solid var(--accent);padding:6px 9px;border-radius:0 6px 6px 0;font-size:11px;color:var(--text2);">${r.prep}</div>`:''}
+        ${isPast?`<div style="margin-top:8px;">
+          <div style="font-size:9px;font-weight:900;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">POST-SESSION NOTES</div>
+          <textarea id="rd-post-${r.id}" placeholder="How did the reading go? What patterns appeared? Client feedback..." style="width:100%;padding:7px 10px;font-size:11px;border:2px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-family:'Nunito',sans-serif;resize:vertical;min-height:50px;">${r.postNotes||''}</textarea>
+          <button onclick="savePostNotes('${r.id}')" style="margin-top:5px;padding:5px 14px;background:var(--accent);color:white;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Save Notes</button>
+        </div>`:''}
+      </div>`;}).join('')}
+  </div>`;
+}
+
+function addReading(){
+  const name=document.getElementById('rd-name')?.value.trim();if(!name){showToast('Add client name!');return;}
+  if(!S.readings)S.readings=[];
+  S.readings.push({id:rnd(),name,type:document.getElementById('rd-type')?.value,date:document.getElementById('rd-date')?.value,
+    time:document.getElementById('rd-time')?.value,platform:document.getElementById('rd-platform')?.value.trim(),
+    prep:document.getElementById('rd-prep')?.value.trim(),focus:document.getElementById('rd-focus')?.value.trim(),postNotes:''});
+  saveS();renderMain();showToast('🔮 Session scheduled!');
+}
+function delReading(id){S.readings=(S.readings||[]).filter(r=>r.id!=id);saveS();renderMain();}
+function savePostNotes(id){
+  const r=S.readings?.find(x=>x.id==id);const ta=document.getElementById('rd-post-'+id);
+  if(r&&ta){r.postNotes=ta.value;saveS();showToast('Notes saved!');}
+}
+
+function renderBaziNotes(el){
+  if(!S.baziNotes)S.baziNotes=[];
+  el.innerHTML=`
+  <div style="background:linear-gradient(135deg,#1a0a2e,#1e3a5f);border:2px solid #60a5fa;border-radius:12px;padding:13px;margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:900;color:#93c5fd;margin-bottom:6px;">☯ Bazi Advance — Storytelling Goal</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.75);line-height:1.7;">Current: translate chart → explain.<br>Goal: see the chart → feel the story → speak directly.<br>Key: pattern recognition over translation. Train sensitivity to element interactions.</div>
+    <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      ${[['Five Elements','Wood/Fire/Earth/Metal/Water — feel their energy, not just labels'],['Ten Gods','How they interact in context, not just definitions'],['Luck Pillars','The flow of time — story arcs not just years'],['Day Master','The protagonist — know them like a character']].map(([t,d])=>`
+        <div style="background:rgba(0,0,0,.25);border-radius:8px;padding:8px;">
+          <div style="font-size:9px;font-weight:900;color:#93c5fd;margin-bottom:3px;">${t}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.7);">${d}</div>
+        </div>`).join('')}
+    </div>
+  </div>
+  <div class="card" style="--ct:linear-gradient(90deg,#0ea5e9,#6366f1);">
+    <div class="ctitle">BAZI STUDY NOTES <em>· ${S.baziNotes.length} entries</em></div>
+    <div class="apanel">
+      <div class="atitle">+ Add Bazi Note</div>
+      <div class="frow">
+        <input class="fi" id="bz-date" type="date" value="${new Date().toISOString().slice(0,10)}" />
+        <select class="fi" id="bz-topic">
+          <option>Five Elements</option><option>Ten Gods</option><option>Branches & Stems</option>
+          <option>Luck Pillars</option><option>Day Master</option><option>Chart Reading</option>
+          <option>Storytelling Practice</option><option>Client Pattern</option><option>Other</option>
+        </select>
+      </div>
+      <input class="fi" id="bz-title" placeholder="Title / chart element studied..." style="width:100%;margin-bottom:7px;" />
+      <textarea class="fta" id="bz-content" placeholder="What you studied, observed, or practiced..."></textarea>
+      <textarea class="fta" id="bz-insight" placeholder="Aha moment / intuitive insight / pattern recognized..."></textarea>
+      <textarea class="fta" id="bz-practice" placeholder="How you'll practice this or apply it in readings..."></textarea>
+      <button class="bmain" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);" onclick="addBaziNote()">+ SAVE NOTE</button>
+    </div>
+    ${S.baziNotes.length===0?`<div class="empty"><span class="ei">☯</span>No Bazi notes yet!</div>`
+    :[...S.baziNotes].reverse().map(n=>`
+      <div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);border:1.5px solid #6366f1;border-radius:12px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <div><div style="font-size:13px;font-weight:800;color:#a5b4fc;">${n.title||'Note'}</div>
+            <div style="font-size:10px;color:#818cf8;margin-top:1px;">${n.topic} · ${n.date}</div>
+          </div>
+          <button class="dbtn" style="color:#818cf8;" onclick="delBaziNote('${n.id}')">✕</button>
+        </div>
+        ${n.content?`<div style="font-size:10px;font-weight:900;color:#93c5fd;letter-spacing:1px;margin-bottom:2px;">STUDY</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-bottom:6px;">${n.content}</div>`:''}
+        ${n.insight?`<div style="font-size:10px;font-weight:900;color:#c4b5fd;letter-spacing:1px;margin-bottom:2px;">✨ AHA MOMENT</div><div style="background:rgba(99,102,241,.15);padding:6px 9px;border-radius:6px;font-size:11px;color:rgba(255,255,255,.85);margin-bottom:6px;">${n.insight}</div>`:''}
+        ${n.practice?`<div style="font-size:10px;font-weight:900;color:#4ade80;letter-spacing:1px;margin-bottom:2px;">PRACTICE PLAN</div><div style="font-size:11px;color:rgba(255,255,255,.75);">${n.practice}</div>`:''}
+      </div>`).join('')}
+  </div>`;
+}
+
+function addBaziNote(){
+  const title=document.getElementById('bz-title')?.value.trim();if(!title){showToast('Add a title!');return;}
+  if(!S.baziNotes)S.baziNotes=[];
+  S.baziNotes.push({id:rnd(),date:document.getElementById('bz-date')?.value,topic:document.getElementById('bz-topic')?.value,title,
+    content:document.getElementById('bz-content')?.value.trim(),insight:document.getElementById('bz-insight')?.value.trim(),
+    practice:document.getElementById('bz-practice')?.value.trim()});
+  saveS();renderMain();showToast('☯ Bazi note saved!');
+}
+function delBaziNote(id){S.baziNotes=(S.baziNotes||[]).filter(n=>n.id!=id);saveS();renderMain();}
+
+// ═══════ INIT ═══════
+seed();syncCatalogQuests();chkStreak();evalAch();renderAll();
+</script>
+
+<script>
+// ── PWA: Register Service Worker ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ── PWA: Install prompt ──
+let _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  _deferredPrompt=e;
+  // Show install banner after 3 seconds
+  setTimeout(()=>{
+    if(!localStorage.getItem('lq_installed')){
+      showInstallBanner();
+    }
+  },3000);
+});
+window.addEventListener('appinstalled',()=>{
+  localStorage.setItem('lq_installed','1');
+  hideInstallBanner();
+  showToast('✨ Life Quest installed!');
+});
+
+function showInstallBanner(){
+  if(document.getElementById('install-banner'))return;
+  const b=document.createElement('div');
+  b.id='install-banner';
+  b.style.cssText=`position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+    background:#6c5ce7;color:white;border-radius:20px;padding:12px 20px;
+    display:flex;align-items:center;gap:12px;z-index:9999;
+    box-shadow:0 8px 24px rgba(108,92,231,.5);font-family:Nunito,sans-serif;
+    animation:slideUp .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;`;
+  b.innerHTML=`
+    <span style="font-size:22px;">⚔️</span>
+    <div>
+      <div style="font-size:12px;font-weight:900;letter-spacing:.5px;">Install Life Quest</div>
+      <div style="font-size:10px;opacity:.8;">Add to home screen as an app</div>
+    </div>
+    <button onclick="installPWA()" style="background:white;color:#6c5ce7;border:none;border-radius:12px;
+      padding:7px 16px;font-size:12px;font-weight:900;cursor:pointer;font-family:Nunito,sans-serif;">
+      Install
+    </button>
+    <button onclick="hideInstallBanner()" style="background:rgba(255,255,255,.2);color:white;border:none;
+      border-radius:10px;padding:7px 10px;font-size:12px;cursor:pointer;">✕</button>`;
+  const style=document.createElement('style');
+  style.textContent='@keyframes slideUp{from{transform:translateX(-50%) translateY(80px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}';
+  document.head.appendChild(style);
+  document.body.appendChild(b);
+}
+
+function hideInstallBanner(){
+  const b=document.getElementById('install-banner');
+  if(b)b.remove();
+  localStorage.setItem('lq_installed','1');
+}
+
+async function installPWA(){
+  if(!_deferredPrompt){
+    showToast('Open in Chrome and use "Add to Home Screen" from the menu!');
+    return;
+  }
+  _deferredPrompt.prompt();
+  const{outcome}=await _deferredPrompt.userChoice;
+  _deferredPrompt=null;
+  if(outcome==='accepted')showToast('🎉 Installing Life Quest!');
+  hideInstallBanner();
+}
+</script>
+</body>
+</html>

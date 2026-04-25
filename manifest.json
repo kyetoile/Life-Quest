@@ -1,0 +1,26 @@
+{
+  "name": "Life Quest ✦",
+  "short_name": "Life Quest",
+  "description": "Your personal RPG life tracker — quests, skills, and adventures await!",
+  "start_url": "./lifequest_full.html",
+  "display": "standalone",
+  "background_color": "#f0eeff",
+  "theme_color": "#6c5ce7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["lifestyle", "productivity", "games"]
+}
